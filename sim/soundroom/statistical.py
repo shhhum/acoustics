@@ -87,7 +87,7 @@ def mass_law_tl(f, m_s: float, field: bool = False, air: Air = AIR):
     """Normal-incidence mass law TL = 10 log10(1 + (π f m″/ρc)²); field incidence ≈ −5 dB."""
     f = np.asarray(f, dtype=float)
     tl = 10 * np.log10(1 + (np.pi * f * m_s / air.Z0) ** 2)
-    return tl - 5.0 if field else tl
+    return np.maximum(tl - 5.0, 0.0) if field else tl
 
 
 def mass_air_mass_frequency(m1: float, m2: float, d: float, filled: bool = False, air: Air = AIR) -> float:
