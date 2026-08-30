@@ -46,3 +46,18 @@ Dated, append-only. Each entry: decision, evidence/mechanism, who. Negative resu
 - Direct sparse LU per frequency is the pragmatic choice at venue scale: 2.5–3.8 s at 16.6k DOF and 8.6 s at 38.8k (SuperLU; MMD_AT_PLUS_A vs COLAMD within 1.5×). GMRES+ILU was 10× slower (43 s) and `python-mumps` had no installable wheel. Frequencies are solved in parallel processes (spawn context; matrices pickled once per worker).
 - The wall enters the coupled model as a normal-incidence 2-port from the same TMM used for the Wall page; openings are meshed as air through the wall thickness; the mesh's wall band is a hole (probe points inside it are masked).
 - First statistical result for the default scene (9.3 % open area, hard venue): the venue-average level is within ±3 dB of the room level at low frequency — the venue's own absorption, not the wall, sets the outside level once openings exist. TL_max from the openings is 10.3 dB.
+
+## 2026-08-30 — First numerical results on the design questions (TMM, `sim/soundroom`, this commit)
+
+Field-incidence absorption (venue-backed), band means:
+
+| stack (150 mm wool + 12 mm ply) | σd/ρc | 63–125 Hz | 125–250 | 250–1k | 1k–4k |
+|---|---|---|---|---|---|
+| 40 → 100 kg/m³ (50 + 100 mm), light first | 15.5 | 0.45 | 0.71 | 0.89 | 0.95 |
+| 100 → 40 kg/m³, dense first (control) | 15.5 | 0.43 | 0.57 | 0.73 | 0.88 |
+| uniform 60 kg/m³ | 9.5 | 0.48 | 0.73 | 0.84 | 0.93 |
+
+- **Ordering matters** (light layer facing the room): the reversed control loses 0.14–0.16 in the 125 Hz–1 kHz range — the face reflects. Confirms the literature.
+- **Grading vs uniform**: the graded stack wins only above ~250 Hz (0.89 vs 0.84); the uniform 60 kg/m³ slab is as good or better below, because its total resistance (σd/ρc = 9.5) is closer to the 2–4 optimum than the graded stack's 15.5. Total σd matters more than the profile — also as predicted.
+- **Air gap** (100 mm of 45 kg/m³): 63–125 Hz 0.29 → 0.40 and 125–250 Hz 0.66 → 0.77 with a 100 mm gap behind the wool; no change above 250 Hz. The quarter-wave mechanism, quantified.
+- **Isolation (coupled FEM, default scene)**: with three 0.9 × 2 m open doorways (9.3 % of the wall area) and a hard venue, the venue-average level is only 3–6 dB below the room level between 25 and 200 Hz; the statistical model gives −2…+3 dB. The opening cap (TL_max = 10.3 dB) and the venue's own absorption dominate; the wall build is nearly irrelevant to the outside level until the openings are closed.

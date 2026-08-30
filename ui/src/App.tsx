@@ -19,6 +19,10 @@ export default function App() {
   const [runsKey, setRunsKey] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
+  const [presets, setPresets] = useState<{ name: string; scene: Scene }[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const notify = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(null), 3000); };
+  const refreshPresets = () => api.presets().then(setPresets).catch(() => {});
   const [room, setRoom] = useState<RoomResult | null>(null);
   const [roomSlices, setRoomSlices] = useState<number[][][] | null>(null);
   const [roomProgress, setRoomProgress] = useState<{ status: string; progress: number; message: string; error?: string } | null>(null);
@@ -110,7 +114,7 @@ export default function App() {
 
   useEffect(() => {
     Promise.all([api.presets(), api.materials()])
-      .then(([p, m]) => { setScene((p.find((x) => x.name === "default") ?? p[0]).scene); setMaterials(m); })
+      .then(([p, m]) => { setPresets(p); setScene((p.find((x) => x.name === "default") ?? p[0]).scene); setMaterials(m); })
       .catch((e) => setErr(`API not reachable (${e}). Start it with: make api`));
   }, []);
 
@@ -143,6 +147,16 @@ export default function App() {
         </div>
         <div style={{ flex: 1 }} />
         {toast && <span style={{ font: `600 10px ${mono}`, color: T.olive }}>{toast}</span>}
+        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <select value="" onChange={(e) => { const p = presets.find((x) => x.name === e.target.value); if (p) { setScene(p.scene); notify(`loaded preset ${p.name}`); } }}
+            style={{ font: `600 9px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
+            <option value="">load preset…</option>
+            {presets.map((p) => <option key={p.name} value={p.name}>{p.name}</option>)}
+          </select>
+          <input value={presetName} onChange={(e) => setPresetName(e.target.value)} placeholder="preset name" style={{ width: 110, font: `500 9px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }} />
+          <button disabled={!presetName || !scene} onClick={async () => { try { await api.savePreset(presetName, { ...scene!, name: presetName }); notify(`saved preset ${presetName}`); setPresetName(""); refreshPresets(); } catch (e) { setErr(String(e)); } }}
+            style={{ font: `600 9px ${mono}`, padding: "4px 8px", border: `1px solid ${T.rule}`, background: "transparent", cursor: "pointer", letterSpacing: ".1em", textTransform: "uppercase" }}>save</button>
+        </div>
         <nav style={{ display: "flex", gap: 2 }}>
           {(["wall", "room", "isolation", "runs"] as Tab[]).map((k) => (
             <button key={k} onClick={() => setTab(k)}
