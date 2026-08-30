@@ -13,3 +13,4 @@ data/runs/*
 data/cache/
 # os
 .DS_Store
+out/
