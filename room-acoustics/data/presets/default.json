@@ -1,0 +1,154 @@
+{
+ "schema_version": 1,
+ "name": "default",
+ "wall": {
+  "name": "wall",
+  "fabric": {
+   "thickness": 0.001,
+   "sigma": 300000.0,
+   "Rs": null,
+   "areal_mass": 0.3
+  },
+  "rockwool": [
+   {
+    "name": "Safe'n'Sound",
+    "density": 40.0,
+    "thickness": 0.05,
+    "model": "jca",
+    "sigma": null,
+    "phi": null,
+    "alpha_inf": null,
+    "Lambda": null,
+    "Lambda_p": null,
+    "k0p": null,
+    "d_fibre": 8e-6
+   },
+   {
+    "name": "RW3",
+    "density": 60.0,
+    "thickness": 0.05,
+    "model": "jca",
+    "sigma": null,
+    "phi": null,
+    "alpha_inf": null,
+    "Lambda": null,
+    "Lambda_p": null,
+    "k0p": null,
+    "d_fibre": 8e-6
+   }
+  ],
+  "airgap": {
+   "thickness": 0.0
+  },
+  "plywood": {
+   "thickness": 0.012,
+   "density": 600.0,
+   "E": 8000000000.0,
+   "nu": 0.3,
+   "loss": 0.03,
+   "model": "plate"
+  }
+ },
+ "venue": {
+  "length": 15.5,
+  "width": 8.0,
+  "height": 2.9,
+  "alpha_floor": [
+   0.02,
+   0.02,
+   0.03,
+   0.03,
+   0.03,
+   0.04,
+   0.05,
+   0.05
+  ],
+  "alpha_walls": [
+   0.02,
+   0.03,
+   0.03,
+   0.03,
+   0.04,
+   0.05,
+   0.05,
+   0.05
+  ],
+  "alpha_ceiling": [
+   0.02,
+   0.03,
+   0.03,
+   0.03,
+   0.04,
+   0.05,
+   0.05,
+   0.05
+  ]
+ },
+ "room": {
+  "length": 6.0,
+  "width": 4.0,
+  "x": 4.0,
+  "y": 2.0,
+  "source_face": "-x",
+  "source_height": 1.2,
+  "source_inset": 0.3,
+  "openings": {
+   "+x": {
+    "width": 0.9,
+    "height": 2.0
+   },
+   "-y": {
+    "width": 0.9,
+    "height": 2.0
+   },
+   "+y": {
+    "width": 0.9,
+    "height": 2.0
+   }
+  }
+ },
+ "listener": {
+  "x": 3.0,
+  "y": 2.0,
+  "z": 1.2
+ },
+ "wall_solver": {
+  "f_min": 20.0,
+  "f_max": 10000.0,
+  "n_freq": 400,
+  "n_theta": 64,
+  "theta_field_max": 78.0,
+  "theta_random_max": 90.0
+ },
+ "room_solver": {
+  "f_max": 300.0,
+  "df": 0.5,
+  "nodes_per_wavelength": 8.0,
+  "basis": "analytic",
+  "basis_margin": 1.6,
+  "n_modes": null,
+  "wall_angle_deg": 0.0
+ },
+ "isolation_solver": {
+  "f_min": 20.0,
+  "f_max": 200.0,
+  "points_per_octave": 12,
+  "nodes_per_wavelength": 6.0,
+  "workers": 4,
+  "receivers": null
+ },
+ "cost": {
+  "currency": "USD",
+  "panel_w": 1.2,
+  "panel_h": 0.6,
+  "waste_fraction": 0.1,
+  "rockwool_price_per_panel": [],
+  "rockwool_price_per_panel_default": 12.0,
+  "fabric_price_per_m2": 15.0,
+  "ply_sheet_w": 1.2,
+  "ply_sheet_h": 2.4,
+  "ply_price_per_sheet": 45.0,
+  "labour_fraction": 0.5,
+  "fixed_costs": 0.0
+ }
+}
