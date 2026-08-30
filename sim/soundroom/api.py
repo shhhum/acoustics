@@ -161,6 +161,17 @@ def get_slices(rid: str):
     return {"freqs": room["slices"]["freqs"], "slices_db": [np.round(s, 1).tolist() for s in arr["slices_db"]]}
 
 
+@app.get("/api/runs/{rid}/isolation_slices")
+def get_isolation_slices(rid: str):
+    try:
+        arr = rs.load_artifact(rid, "isolation.npz")
+        iso = rs.load_artifact(rid, "isolation.json")
+    except FileNotFoundError:
+        raise HTTPException(404, rid)
+    return {"freqs": iso["slices"]["freqs"],
+            "slices_db": [[[None if np.isnan(v) else round(float(v), 1) for v in row] for row in s] for s in arr["slices_db"]]}
+
+
 @app.get("/api/runs/{rid}/progress")
 def run_progress(rid: str):
     st = RUNNER.status(rid)

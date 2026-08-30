@@ -8,7 +8,7 @@ the coupled venue to predict modes, frequency response, T60 and the inside→
 outside level difference. A React UI drives the Python engine; every run is
 logged to disk with its inputs and provenance.
 
-Status: **M3 — wall engine, room FEM/modal solver (FRF, T60, modes, pressure maps), API + UI (Wall, Room, Runs); coupled venue isolation (M4) next.** See `docs/decisions.md`
+Status: **M4 — wall engine, room FEM/modal solver, coupled venue isolation solver, API + UI (Wall, Room, Isolation, Runs). M5 (run comparison, presets, export) next.** See `docs/decisions.md`
 for the dated decision log and `docs/research/` for the literature/patent
 reports the design rests on.
 
@@ -29,10 +29,21 @@ soundsystem-designer.jsx   earlier single-file design instrument (kept as-is; de
 ## Setup
 
 ```
-make setup     # uv sync (Python 3.12 venv in sim/.venv) + npm install (from M2)
-make test      # pytest
-make dev       # API server + UI dev server (from M2)
+make setup     # uv sync (Python 3.12 venv in sim/.venv) + npm install
+make test      # pytest (39 tests: analytic oracles, golden JSX baseline, FEM/modal, coupled model)
+make dev       # API (uvicorn :8765) + UI (vite :5173) — open http://localhost:5173
 ```
+
+CLI equivalents (results land in `out/…`, not the run store):
+
+```
+cd sim
+uv run soundroom wall --png                 # TMM: impedance / absorption / TL
+uv run soundroom room  [--fmax 300]         # room FEM/modal: FRF, T60, modes, maps  (~30 s)
+uv run soundroom isolation [--fmax 200] [--workers 4]   # coupled venue: level difference (~1.5 min)
+```
+
+Runs saved from the UI go to `data/runs/<timestamp>-<hash>/` (inputs, results, provenance) and can be reopened, compared and reloaded from the Runs page.
 
 ## Physics in one paragraph
 

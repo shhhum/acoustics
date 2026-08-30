@@ -45,3 +45,14 @@ Modal reduction: Ψ = analytic rigid-box modes cos(nxπx/Lx)cos(nyπy/Ly)cos(nz�
 Impulse response: H(f) = p/(jωρ0) (flat-spectrum excitation), top 10 % cosine taper, `irfft` → fs = 2f_max, IR length 1/Δf. Per 1/3-octave band: zero-phase Butterworth-magnitude window |H_bp|² (order 3; a brick-wall window rings and puts a false floor in the decay), Schroeder backward integration, linear fit −5…−25 dB, T60 = 3·T20.
 Modal damping: with β frozen at each octave centre, the quadratic eigenproblem K̃ + λ C̃ + λ² M̃/c² = 0, C̃ = Σ(β_i/c)B̃_i, λ = jω, solved via the companion matrix; each rigid mode takes the damped eigenvalue from the nearest reference; T60 = 6.91/Im ω = 1.10/Im f.
 Statistical cross-checks: Sabine/Eyring with the TMM field-incidence α on the walls, α = 1 on openings, venue α on floor/ceiling, ISO 9613-1 air absorption; Schroeder frequency 2000√(T60/V).
+
+## Coupled venue + room (M4) — `coupled.py`, `isolation.py`
+Domain: the venue box minus the wall band (thickness = stack thickness) around the sound room; openings keep their wall-band elements as air (a short duct through the wall). Structured hex tensor grid with planes at the inner and outer wall surfaces and at opening edges; inner-face and outer-face nodes pair 1:1 across the wall.
+
+Wall interface: normal-incidence TMM 2-port [p_in; v_in] = T[p_out; v_out] (v positive room→venue, det T = 1) →
+v_in = (T22/T12)p_in − (1/T12)p_out, v_out = (1/T12)p_in − (T11/T12)p_out; with ∂p/∂n = −jωρ0v_n on each side:
+A += jωρ0[(T22/T12)B_in − (1/T12)(B_x + B_xᵀ) + (T11/T12)B_out]. Limp-mass check: T12 = jωm″ → (ρ0/m″)[B_in − B_x − B_xᵀ + B_out], purely reactive. Unpaired corner strips of the outer faces are rigid. Venue floor/walls/ceiling: real β from the octave α tables.
+Sources: the room's two monopoles (coherent, equal Q). One sparse complex LU per frequency (SuperLU, COLAMD), frequencies distributed over worker processes; 1/12-octave grid 20 Hz → cap (default 200 Hz, ~23k DOF, ~3 s per solve).
+Outputs: D(f) = L_in − L_out with L_in = 10log⟨|p|²⟩ over room-interior nodes, L_out at receiver points (default: 1 m outside each opening at listener height, venue centre, far corner) and as the venue-node average; venue pressure maps at listener height re the room average (wall band = NaN).
+
+Statistical model (all frequencies; used above the cap): per face i (wall patch with field-incidence TL from the TMM, opening with TL = 0) the radiated power W_i ∝ S_i·10^(−TL_i/10)/4 (power route: L_W = L_in − 6 + 10log S − TL); receiver level = Σ_i W_i[Q/(4πr_i²) + 4/R_venue] with Q = 2, r_i the distance to the face centre, R_venue = Sᾱ/(1−ᾱ) from the venue α tables; venue average uses the reverberant term only. Reported alongside: wall TL, composite TL = −10log(ΣS_i10^(−TL_i/10)/ΣS_i), and the opening cap TL_max = −10log(open fraction).
