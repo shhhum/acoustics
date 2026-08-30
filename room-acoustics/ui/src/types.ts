@@ -34,10 +34,17 @@ export interface Listener { x: number; y: number; z: number }
 
 export interface RoomSolverSettings { f_max: number; df: number; nodes_per_wavelength: number; basis: "analytic" | "fem"; basis_margin: number; n_modes?: number | null; wall_angle_deg: number }
 
+export interface CostSettings {
+  currency: string; panel_w: number; panel_h: number; waste_fraction: number;
+  rockwool_price_per_panel: number[]; rockwool_price_per_panel_default: number; fabric_price_per_m2: number;
+  ply_sheet_w: number; ply_sheet_h: number; ply_price_per_sheet: number; labour_fraction: number; fixed_costs: number;
+}
+export interface SavedWall { name: string; wall: WallStack; thickness_mm: number; layers: string[]; modified: number }
+
 export interface IsolationSolverSettings { f_min: number; f_max: number; points_per_octave: number; nodes_per_wavelength: number; workers: number; receivers?: number[][] | null }
 
 export interface Scene {
-  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings; room_solver: RoomSolverSettings; isolation_solver: IsolationSolverSettings;
+  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings; room_solver: RoomSolverSettings; isolation_solver: IsolationSolverSettings; cost: CostSettings;
 }
 
 export interface IsolationResult {

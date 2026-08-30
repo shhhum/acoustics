@@ -139,7 +139,8 @@ def warnings(stack: WallStack, table: list[dict], f: np.ndarray, air: Air = AIR)
         w.append(f"total normalised flow resistance σd/ρc = {total_R:.1f} — well above the 2–4 optimum; the face will reflect")
     dens = [r.density for r in stack.rockwool if r.thickness > 0]
     if any(b < a for a, b in zip(dens, dens[1:])):
-        w.append("rockwool densities are not increasing from the room side outward — the literature ordering is low σ first")
+        w.append("rockwool densities are not increasing from the room side outward (light layer should face the room) — "
+                 "results below are computed for the stack exactly as entered, so you can see the penalty")
     return w
 
 

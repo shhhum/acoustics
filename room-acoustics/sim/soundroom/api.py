@@ -76,6 +76,51 @@ def put_preset(name: str, scene: Scene):
     return {"ok": True, "name": name}
 
 
+# ---------------------------------------------------------------- named wall library (data/walls/<name>.json)
+
+def _walls_dir() -> Path:
+    d = data_dir() / "walls"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _safe_name(name: str) -> str:
+    if not name or not all(ch.isalnum() or ch in "-_ .+()," for ch in name) or name.startswith(".") or "/" in name:
+        raise HTTPException(400, "wall name: letters, digits, space, - _ . + ( ) , only")
+    return name.strip()
+
+
+@app.get("/api/walls")
+def list_walls():
+    out = []
+    for p in sorted(_walls_dir().glob("*.json")):
+        try:
+            w = WallStack.model_validate(json.loads(p.read_text()))
+        except Exception:  # noqa: BLE001
+            continue
+        out.append({"name": p.stem, "wall": w.model_dump(mode="json"), "thickness_mm": w.thickness * 1e3,
+                    "layers": [f"{r.density:g}×{r.thickness*1e3:.0f}" for r in w.rockwool if r.thickness > 0],
+                    "modified": p.stat().st_mtime})
+    return out
+
+
+@app.put("/api/walls/{name}")
+def put_wall(name: str, wall: WallStack):
+    name = _safe_name(name)
+    w = wall.model_copy(update={"name": name})
+    (_walls_dir() / f"{name}.json").write_text(w.model_dump_json(indent=1))
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/walls/{name}")
+def delete_wall(name: str):
+    p = _walls_dir() / f"{_safe_name(name)}.json"
+    if not p.exists():
+        raise HTTPException(404, name)
+    p.unlink()
+    return {"ok": True}
+
+
 @app.post("/api/runs")
 def create_run(req: RunRequest):
     unknown = [k for k in req.kinds if k not in ("wall", "room", "isolation")]

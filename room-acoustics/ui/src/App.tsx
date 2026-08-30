@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { Card, Note } from "./primitives";
 import { RunsPage } from "./pages/RunsPage";
+import { CostPage, CostRail } from "./pages/CostPage";
 import { IsolationPage, IsolationRail } from "./pages/IsolationPage";
 import { RoomPage, RoomRail } from "./pages/RoomPage";
 import { WallPage, WallRail } from "./pages/WallPage";
 import { T, disp, mono } from "./theme";
-import type { IsolationResult, MaterialPresets, RoomResult, Scene, WallResult } from "./types";
+import type { IsolationResult, MaterialPresets, RoomResult, SavedWall, Scene, WallResult } from "./types";
 
-type Tab = "wall" | "room" | "isolation" | "runs";
+type Tab = "wall" | "room" | "cost" | "isolation" | "runs";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("wall");
@@ -20,6 +21,16 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
   const [presets, setPresets] = useState<{ name: string; scene: Scene }[]>([]);
+  const [walls, setWalls] = useState<SavedWall[]>([]);
+  const refreshWalls = () => api.walls().then(setWalls).catch(() => {});
+  useEffect(() => { refreshWalls(); }, []);
+  const saveWall = async (name: string) => {
+    if (!scene) return;
+    try { await api.saveWall(name, scene.wall); setScene({ ...scene, wall: { ...scene.wall, name } }); notify(`saved wall "${name}"`); refreshWalls(); }
+    catch (e) { setErr(String(e)); }
+  };
+  const loadWall = (w: SavedWall) => { if (!scene) return; setScene({ ...scene, wall: w.wall }); notify(`loaded wall "${w.name}"`); };
+  const deleteWall = async (name: string) => { await api.deleteWall(name); notify(`deleted wall "${name}"`); refreshWalls(); };
   const [presetName, setPresetName] = useState("");
   const notify = (msg: string) => { setToast(msg); window.setTimeout(() => setToast(null), 3000); };
   const refreshPresets = () => api.presets().then(setPresets).catch(() => {});
@@ -158,7 +169,7 @@ export default function App() {
             style={{ font: `600 9px ${mono}`, padding: "4px 8px", border: `1px solid ${T.rule}`, background: "transparent", cursor: "pointer", letterSpacing: ".1em", textTransform: "uppercase" }}>save</button>
         </div>
         <nav style={{ display: "flex", gap: 2 }}>
-          {(["wall", "room", "isolation", "runs"] as Tab[]).map((k) => (
+          {(["wall", "room", "cost", "isolation", "runs"] as Tab[]).map((k) => (
             <button key={k} onClick={() => setTab(k)}
               style={{ padding: "6px 12px", border: `1px solid ${tab === k ? T.ink : T.rule}`, background: tab === k ? T.ink : "transparent", color: tab === k ? T.paper : T.ink2,
                 font: `600 10px ${mono}`, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 2 }}>{k}</button>
@@ -172,14 +183,16 @@ export default function App() {
         <main style={{ display: "grid", gridTemplateColumns: tab === "runs" ? "minmax(0, 1fr)" : "320px minmax(0, 1fr)", gap: 20, padding: 20, maxWidth: 1800 }}>
           {tab !== "runs" && (
             <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
-              {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} />}
-              {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} />}
+              {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} walls={walls} onSaveWall={saveWall} onLoadWall={loadWall} onDeleteWall={deleteWall} />}
+              {tab === "cost" && <CostRail scene={scene} setScene={setScene} />}
+              {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} walls={walls} onLoadWall={loadWall} />}
               {tab === "isolation" && <IsolationRail scene={scene} setScene={setScene} onRun={runIso} running={!!isoRunId} />}
             </aside>
           )}
           <section style={{ minWidth: 0 }}>
             {tab === "wall" && <WallPage scene={scene} result={wall} materials={materials} onSave={save} />}
             {tab === "room" && <RoomPage scene={scene} result={room} progress={roomProgress} slices={roomSlices} />}
+            {tab === "cost" && <CostPage scene={scene} />}
             {tab === "isolation" && <IsolationPage scene={scene} result={iso} progress={isoProgress} slices={isoSlices} />}
             {tab === "runs" && <RunsPage onLoad={loadRun} refreshKey={runsKey} />}
           </section>

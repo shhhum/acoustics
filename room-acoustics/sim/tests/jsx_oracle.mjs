@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const src = readFileSync(join(here, "..", "..", "soundsystem-designer.jsx"), "utf8").split("\n");
+const src = readFileSync(join(here, "..", "..", "..", "soundsystem-designer.jsx"), "utf8").split("\n");
 const physics = src.slice(32, 138).join("\n"); // 1-based lines 33..138
 
 const env = {

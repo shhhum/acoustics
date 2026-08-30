@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Button, Card, Field, Note, SectionLabel, Seg, Slider, Stat, fmt } from "../primitives";
 import { LogLineChart, rows } from "../charts";
 import { T, mono } from "../theme";
-import type { RoomResult, Scene } from "../types";
+import type { RoomResult, SavedWall, Scene } from "../types";
 
 const FACES = ["-x", "+x", "-y", "+y"] as const;
 
-export function RoomRail({ scene, setScene, onRun, running }: { scene: Scene; setScene: (s: Scene) => void; onRun: (note: string) => void; running: boolean }) {
+export function RoomRail({ scene, setScene, onRun, running, walls, onLoadWall }: { scene: Scene; setScene: (s: Scene) => void; onRun: (note: string) => void; running: boolean; walls: SavedWall[]; onLoadWall: (w: SavedWall) => void }) {
   const r = scene.room, v = scene.venue, l = scene.listener, s = scene.room_solver;
   const setRoom = (patch: Partial<typeof r>) => setScene({ ...scene, room: { ...r, ...patch } });
   const setL = (patch: Partial<typeof l>) => setScene({ ...scene, listener: { ...l, ...patch } });
@@ -15,6 +15,14 @@ export function RoomRail({ scene, setScene, onRun, running }: { scene: Scene; se
   const fits = r.x + r.length <= v.length + 1e-9 && r.y + r.width <= v.width + 1e-9;
   return (
     <div>
+      <SectionLabel>Wall</SectionLabel>
+      <Field label="Current wall" hint={`${scene.wall.rockwool.filter((l) => l.thickness > 0).map((l) => `${l.density}×${(l.thickness * 1000).toFixed(0)}`).join(" → ")}${scene.wall.airgap.thickness > 0 ? ` → gap ${(scene.wall.airgap.thickness * 1000).toFixed(0)}` : ""} → ply ${(scene.wall.plywood.thickness * 1000).toFixed(0)} mm`}>
+        <select value="" onChange={(e) => { const w = walls.find((x) => x.name === e.target.value); if (w) onLoadWall(w); }}
+          style={{ width: "100%", font: `600 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
+          <option value="">{scene.wall.name || "unnamed wall"} — load a saved wall…</option>
+          {walls.map((w) => <option key={w.name} value={w.name}>{w.name} · {w.thickness_mm.toFixed(0)} mm · {w.layers.join("→")}</option>)}
+        </select>
+      </Field>
       <SectionLabel>Sound room (interior)</SectionLabel>
       <Slider label="Length (x)" unit="m" value={r.length} min={2} max={12} step={0.1} onChange={(x) => setRoom({ length: x })} fmt={(x) => x.toFixed(1)} />
       <Slider label="Width (y)" unit="m" value={r.width} min={2} max={7} step={0.1} onChange={(x) => setRoom({ width: x })} fmt={(x) => x.toFixed(1)} />

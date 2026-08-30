@@ -141,6 +141,23 @@ class IsolationSolverSettings(BaseModel):
     receivers: list[list[float]] | None = Field(None, description="venue-coordinate receiver points; None = defaults")
 
 
+class CostSettings(BaseModel):
+    """Bill-of-materials inputs (prices are user inputs; nothing here is a physics quantity)."""
+
+    currency: str = "USD"
+    panel_w: float = Field(1.2, gt=0, description="rockwool panel width, m")
+    panel_h: float = Field(0.6, gt=0, description="rockwool panel height, m")
+    waste_fraction: float = Field(0.1, ge=0, le=1)
+    rockwool_price_per_panel: list[float] = Field(default_factory=list, description="per layer index; missing → default")
+    rockwool_price_per_panel_default: float = Field(12.0, ge=0)
+    fabric_price_per_m2: float = Field(15.0, ge=0)
+    ply_sheet_w: float = Field(1.2, gt=0)
+    ply_sheet_h: float = Field(2.4, gt=0)
+    ply_price_per_sheet: float = Field(45.0, ge=0)
+    labour_fraction: float = Field(0.5, ge=0)
+    fixed_costs: float = Field(0.0, ge=0)
+
+
 class Scene(BaseModel):
     schema_version: int = SCHEMA_VERSION
     name: str = "default"
@@ -151,3 +168,4 @@ class Scene(BaseModel):
     wall_solver: WallSolverSettings = WallSolverSettings()
     room_solver: RoomSolverSettings = RoomSolverSettings()
     isolation_solver: IsolationSolverSettings = IsolationSolverSettings()
+    cost: CostSettings = CostSettings()
