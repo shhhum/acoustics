@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import time
+
+import numpy as np
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -59,7 +61,8 @@ def materials():
 @app.get("/api/presets")
 def presets():
     d = data_dir() / "presets"
-    return [{"name": p.stem, "scene": json.loads(p.read_text())} for p in sorted(d.glob("*.json"))]
+    # validate through the schema so presets written by older versions pick up new defaults
+    return [{"name": p.stem, "scene": Scene.model_validate(json.loads(p.read_text())).model_dump(mode="json")} for p in sorted(d.glob("*.json"))]
 
 
 @app.put("/api/presets/{name}")
@@ -97,8 +100,7 @@ def create_run(req: RunRequest):
 
 
 def _submit_solver_jobs(rid: str, scene: Scene, kinds: list[str]) -> None:
-    """Room / isolation solvers are wired in M3/M4; until then the job fails loudly."""
-    from . import solvers  # noqa: F401  (raises ImportError until M3)
+    from . import solvers
 
     solvers.submit(rid, scene, kinds)
 
@@ -146,6 +148,17 @@ def get_artifact(rid: str, name: str):
     if not p.exists() or name.endswith(".npz"):
         raise HTTPException(404, name)
     return json.loads(p.read_text())
+
+
+@app.get("/api/runs/{rid}/slices")
+def get_slices(rid: str):
+    """Pressure-map slices from room.npz (kept out of room.json to keep it small)."""
+    try:
+        arr = rs.load_artifact(rid, "room.npz")
+        room = rs.load_artifact(rid, "room.json")
+    except FileNotFoundError:
+        raise HTTPException(404, rid)
+    return {"freqs": room["slices"]["freqs"], "slices_db": [np.round(s, 1).tolist() for s in arr["slices_db"]]}
 
 
 @app.get("/api/runs/{rid}/progress")

@@ -33,3 +33,15 @@ Per-layer σ, φ, α∞, Λ, Λ′, k0′, σd/ρc; Z_s/ρc (normal incidence) f
 
 ## Room FEM (M3) — to be written with the code
 ## Coupled venue (M4) — to be written with the code
+
+## Room FEM (M3) — `geometry.py`, `mesh.py`, `fem.py`, `boundary.py`, `modal.py`, `room.py`
+Domain: the sound-room interior box (Lx × Ly × H_venue). Structured trilinear hexahedra (scikit-fem `MeshHex1`/`ElementHex1`), h = c/(f_max · nodes_per_wavelength), grid lines snapped to opening edges so each boundary facet belongs to exactly one patch (wall face minus opening, opening, floor, ceiling).
+
+Weak form (e^{+jωt}, monopole of volume velocity Q at x_s): ∫∇p·∇w − k²∫pw + jk Σ_i β_i(ω)∫_{Γ_i} pw = jωρ0 Q w(x_s), from ∂p/∂n = −jωρ0 v_n and v_n = p/Z_s, β = ρc/Z_s.
+Patch admittances: walls β = ρc/Z_s(ω, θ) from the TMM, venue-backed, at a fixed angle θ (locally-reacting approximation; θ selectable); openings: baffled circular piston of equal area, Z_rad = ρc[1 − 2J1(2ka)/(2ka) + j·2H1(2ka)/(2ka)]; floor/ceiling: real β from the venue octave-band α via α = 4β/(1+β)².
+Levels are reported in dB re the free-field pressure of one source at 1 m, ωρ0Q/4π.
+
+Modal reduction: Ψ = analytic rigid-box modes cos(nxπx/Lx)cos(nyπy/Ly)cos(nzπz/Lz) sampled on the mesh nodes and M-normalised (Rayleigh–Ritz on the FEM matrices; `basis="fem"` uses `eigsh` Neumann eigenvectors instead). Reduced dense system (K̃ − k²M̃ + jkΣβ_iB̃_i)a = F̃, modes retained to basis_margin × f_max. Sweep on a uniform grid 0…f_max step Δf.
+Impulse response: H(f) = p/(jωρ0) (flat-spectrum excitation), top 10 % cosine taper, `irfft` → fs = 2f_max, IR length 1/Δf. Per 1/3-octave band: zero-phase Butterworth-magnitude window |H_bp|² (order 3; a brick-wall window rings and puts a false floor in the decay), Schroeder backward integration, linear fit −5…−25 dB, T60 = 3·T20.
+Modal damping: with β frozen at each octave centre, the quadratic eigenproblem K̃ + λ C̃ + λ² M̃/c² = 0, C̃ = Σ(β_i/c)B̃_i, λ = jω, solved via the companion matrix; each rigid mode takes the damped eigenvalue from the nearest reference; T60 = 6.91/Im ω = 1.10/Im f.
+Statistical cross-checks: Sabine/Eyring with the TMM field-incidence α on the walls, α = 1 on openings, venue α on floor/ceiling, ISO 9613-1 air absorption; Schroeder frequency 2000√(T60/V).

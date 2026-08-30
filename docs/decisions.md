@@ -31,3 +31,12 @@ Dated, append-only. Each entry: decision, evidence/mechanism, who. Negative resu
 **Process.** Branch → PR → merge per milestone; research memorialized in-repo the day it lands; runs are append-only on disk with provenance; golden-baseline first (reproduce the existing JSX Miki curve before trusting the JCA implementation).
 
 **Not accessible.** LinkedIn patents page (HTTP 999); patents recovered from Google Patents instead. Rod Gervais book not accessible; its numbers are not used.
+
+## 2026-08-30 — Room solver (M3): what worked and what didn't (Claude Fable 5)
+
+- **Modal projection works.** Analytic rigid-box cosine modes sampled on the FEM mesh (Rayleigh–Ritz on the assembled K, M, B) give a 970-mode reduced model for the default room at a 300 Hz cap; the full sweep (0–300 Hz at 0.5 Hz) takes ~25 s. FEM `eigsh` eigenfrequencies match the analytic ones to 0.1 % (0.14 m mesh). A direct complex sparse solve costs 17 s *per frequency* at 29k DOF (SuperLU fill-in) — sweeps must use the reduced model; M4 will need a better sparse solver or a reduced basis of its own.
+- **Basis truncation:** listener pressure error vs. the direct FEM solve is 10–27 % with modes retained to 1× the cap and 3–4 % at 2×; default `basis_margin` = 1.6.
+- **Modal damping via QEP:** with the reduced FEM matrices, K̃a = k²M̃a (k = ω/c), so the ω-QEP needs M̃/c². With that fix the modal T60s (0.4–0.55 s) agree with Eyring (0.47 s) for the default stack.
+- **Negative result — zero-phase band windows for T60.** A frequency-domain 1/3-octave window (brick-wall with soft edges, then a Butterworth-magnitude |H|²) rings for ~0.1 s and, being symmetric in time, wraps into the periodic IR; the Schroeder curve floors at −10 dB and T60 comes out at 30–200 s even for a synthetic single mode with a known 0.5 s. Fix: causal Butterworth band-pass applied to the time-reversed IR (ISO 3382 practice).
+- **Negative result — zero-phase high-pass.** The volume-velocity impulse leaves a 1/ω compliance drift ((0,0,0) mode) that never decays; removing it with a real spectral window put ~2 % of the energy at negative time (same wrap). Fix: shape the spectrum with *minimum-phase* analog Butterworth transfer functions (HP 2nd order at 16 Hz, LP 4th order at 0.9 f_max). Synthetic check now returns 0.50 s; room bands give 0.33–0.37 s at 63–100 Hz vs Eyring 0.46 s.
+- Fit range is adaptive (T20 → T10 when the late floor is within 10 dB); bands with < 10 dB of range report no value rather than a wrong one.

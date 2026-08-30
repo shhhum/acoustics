@@ -32,8 +32,21 @@ export interface SoundRoom {
 }
 export interface Listener { x: number; y: number; z: number }
 
+export interface RoomSolverSettings { f_max: number; df: number; nodes_per_wavelength: number; basis: "analytic" | "fem"; basis_margin: number; n_modes?: number | null; wall_angle_deg: number }
+
 export interface Scene {
-  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings;
+  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings; room_solver: RoomSolverSettings;
+}
+
+export interface RoomMode { f_rigid: number; f_damped: number; T60: number | null; n: number[] | null; type: string }
+export interface RoomResult {
+  f: number[];
+  frf: { sum_db: number[]; source_db: number[][]; reference: string };
+  t60: { f: number[]; schroeder: (number | null)[]; sabine: number[]; eyring: number[] };
+  modes: RoomMode[];
+  stats: { V: number; S: number; f_schroeder: number; t60_mid_eyring: number; n_modes_below_cap: number; N_basis: number; basis: string; h: number; mesh: { nodes: number }; areas: Record<string, number>; Lx: number; Ly: number; Lz: number };
+  slices: { z: number; x: number[]; y: number[]; freqs: number[] };
+  timings: Record<string, number>;
 }
 
 export interface AlphaSet {
@@ -62,7 +75,7 @@ export interface RunMeta {
   inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[];
 }
 
-export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: any; isolation?: any }
+export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: RoomResult; isolation?: any }
 
 export interface MaterialPresets {
   rockwool: { name: string; density: number; sigma_estimate: number; sigma_strutt: number; source: string }[];

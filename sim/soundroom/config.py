@@ -122,6 +122,16 @@ class Listener(BaseModel):
     z: float = 1.2
 
 
+class RoomSolverSettings(BaseModel):
+    f_max: float = Field(300.0, gt=20, le=800, description="FEM cap, Hz")
+    df: float = Field(0.5, gt=0, description="sweep resolution, Hz (sets IR length 1/df)")
+    nodes_per_wavelength: float = Field(8.0, ge=4, description="trilinear hex mesh resolution at f_max")
+    basis: Literal["analytic", "fem"] = "analytic"
+    basis_margin: float = Field(1.6, ge=1.0, description="modes retained up to basis_margin × f_max (truncation error ≈ 4 % at 2×, 10–25 % at 1×)")
+    n_modes: int | None = Field(None, description="override the number of modes (fem basis)")
+    wall_angle_deg: float = Field(0.0, ge=0, le=80, description="incidence angle at which the wall's Z_s is taken for the Robin BC")
+
+
 class Scene(BaseModel):
     schema_version: int = SCHEMA_VERSION
     name: str = "default"
@@ -130,3 +140,4 @@ class Scene(BaseModel):
     room: SoundRoom = SoundRoom()
     listener: Listener = Listener()
     wall_solver: WallSolverSettings = WallSolverSettings()
+    room_solver: RoomSolverSettings = RoomSolverSettings()
