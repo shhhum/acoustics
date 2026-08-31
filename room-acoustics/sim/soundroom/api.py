@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import runs as rs
-from .config import Scene, WallSolverSettings, WallStack
+from .config import Scene, SoundRoom, WallSolverSettings, WallStack
 from .jobs import RUNNER
 from .materials import data_dir, load_presets
 from .wall import compute_wall
@@ -117,6 +117,42 @@ def put_wall(name: str, wall: WallStack):
 @app.delete("/api/walls/{name}")
 def delete_wall(name: str):
     p = _walls_dir() / f"{_safe_name(name)}.json"
+    if not p.exists():
+        raise HTTPException(404, name)
+    p.unlink()
+    return {"ok": True}
+
+
+def _rooms_dir() -> Path:
+    d = data_dir() / "rooms"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+@app.get("/api/rooms")
+def list_rooms():
+    out = []
+    for p in sorted(_rooms_dir().glob("*.json")):
+        try:
+            r = SoundRoom.model_validate(json.loads(p.read_text()))
+        except Exception:  # noqa: BLE001
+            continue
+        out.append({"name": p.stem, "room": r.model_dump(mode="json"),
+                    "dims": f"{r.length:g}×{r.width:g} m at ({r.x:g}, {r.y:g})",
+                    "modified": p.stat().st_mtime})
+    return out
+
+
+@app.put("/api/rooms/{name}")
+def put_room(name: str, room: SoundRoom):
+    name = _safe_name(name)
+    (_rooms_dir() / f"{name}.json").write_text(room.model_dump_json(indent=1))
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/rooms/{name}")
+def delete_room(name: str):
+    p = _rooms_dir() / f"{_safe_name(name)}.json"
     if not p.exists():
         raise HTTPException(404, name)
     p.unlink()

@@ -44,3 +44,15 @@ def test_run_store_roundtrip(client, tmp_path):
 def test_unknown_kind_rejected(client):
     r = client.post("/api/runs", json={"scene": Scene().model_dump(mode="json"), "kinds": ["bogus"]})
     assert r.status_code == 400
+
+
+def test_rooms_crud_roundtrip(client):
+    room = {"length": 5.8, "width": 6.2, "x": 1.0, "y": 0.9, "source_face": "-x",
+            "source_height": 1.2, "source_inset": 0.5, "openings": {"+x": {"width": 1.2, "height": 2.0}}}
+    r = client.put("/api/rooms/test room", json=room)
+    assert r.status_code == 200
+    rooms = client.get("/api/rooms").json()
+    mine = next(x for x in rooms if x["name"] == "test room")
+    assert mine["room"]["length"] == 5.8 and "5.8×6.2" in mine["dims"]
+    assert client.delete("/api/rooms/test room").status_code == 200
+    assert all(x["name"] != "test room" for x in client.get("/api/rooms").json())

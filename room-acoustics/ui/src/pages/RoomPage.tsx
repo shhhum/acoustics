@@ -1,75 +1,83 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Card, Field, Note, SectionLabel, Seg, Slider, Stat, fmt } from "../primitives";
+import { Button, Card, Field, Note, SectionLabel, Slider, Stat } from "../primitives";
 import { LogLineChart, rows } from "../charts";
 import { T, mono } from "../theme";
-import type { RoomResult, SavedWall, Scene } from "../types";
+import { fmt } from "../primitives";
+import type { RoomResult, SavedRoom, Scene } from "../types";
 
-const FACES = ["-x", "+x", "-y", "+y"] as const;
-
-export function RoomRail({ scene, setScene, onRun, running, walls, onLoadWall }: { scene: Scene; setScene: (s: Scene) => void; onRun: (note: string) => void; running: boolean; walls: SavedWall[]; onLoadWall: (w: SavedWall) => void }) {
-  const r = scene.room, v = scene.venue, l = scene.listener, s = scene.room_solver;
+/** Room tab: geometry & placement only. Sources, listener, solvers and results live in Simulate. */
+export function RoomRail({ scene, setScene, rooms, onSaveRoom, onLoadRoom, onDeleteRoom }: {
+  scene: Scene; setScene: (s: Scene) => void; rooms: SavedRoom[];
+  onSaveRoom: (name: string) => Promise<void>; onLoadRoom: (r: SavedRoom) => void; onDeleteRoom: (name: string) => Promise<void>;
+}) {
+  const r = scene.room, v = scene.venue;
   const setRoom = (patch: Partial<typeof r>) => setScene({ ...scene, room: { ...r, ...patch } });
-  const setL = (patch: Partial<typeof l>) => setScene({ ...scene, listener: { ...l, ...patch } });
-  const setS = (patch: Partial<typeof s>) => setScene({ ...scene, room_solver: { ...s, ...patch } });
-  const [note, setNote] = useState("");
+  const [roomName, setRoomName] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const nameOk = !/[/\\]/.test(roomName) && !roomName.trim().startsWith(".");
   const fits = r.x + r.length <= v.length + 1e-9 && r.y + r.width <= v.width + 1e-9;
+  const FACES = ["-x", "+x", "-y", "+y"] as const;
   return (
     <div>
-      <SectionLabel>Wall</SectionLabel>
-      <Field label="Current wall" hint={`${scene.wall.layers.filter((l) => l.thickness > 0).map((l) => l.kind === "airgap" ? `gap ${(l.thickness * 1000).toFixed(0)}` : `${l.density}×${(l.thickness * 1000).toFixed(0)}`).join(" → ")} → ply ${(scene.wall.plywood.thickness * 1000).toFixed(0)} mm`}>
-        <select value="" onChange={(e) => { const w = walls.find((x) => x.name === e.target.value); if (w) onLoadWall(w); }}
+      <SectionLabel>Room library</SectionLabel>
+      <Field label="Saved rooms" hint={rooms.length ? `${rooms.length} in data/rooms/` : "none saved yet"}>
+        <select value="" onChange={(e) => { const s = rooms.find((x) => x.name === e.target.value); if (s) { onLoadRoom(s); setRoomName(s.name); } }}
           style={{ width: "100%", font: `600 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
-          <option value="">{scene.wall.name || "unnamed wall"} — load a saved wall…</option>
-          {walls.map((w) => <option key={w.name} value={w.name}>{w.name} · {w.thickness_mm.toFixed(0)} mm · {w.layers.join("→")}</option>)}
+          <option value="">load a saved room…</option>
+          {rooms.map((s) => <option key={s.name} value={s.name}>{s.name} · {s.dims}</option>)}
         </select>
       </Field>
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
+        <input value={roomName} onChange={(e) => setRoomName(e.target.value)} placeholder="room name"
+          onKeyDown={(e) => { if (e.key === "Enter" && roomName.trim() && nameOk) onSaveRoom(roomName.trim()); }}
+          style={{ flex: 1, font: `500 11px ${mono}`, padding: 5, border: `1px solid ${T.rule}`, background: T.paper }} />
+        <Button small primary disabled={!roomName.trim() || !nameOk} onClick={() => onSaveRoom(roomName.trim())}>{rooms.some((s) => s.name === roomName.trim()) ? "overwrite" : "save room"}</Button>
+      </div>
+      {!nameOk && <Note tone={T.red}>name can't contain / or \ or start with a dot</Note>}
+      {rooms.some((s) => s.name === roomName.trim()) && (
+        confirmDelete === roomName.trim()
+          ? <div style={{ display: "flex", gap: 6 }}><Button small onClick={async () => { await onDeleteRoom(roomName.trim()); setConfirmDelete(null); setRoomName(""); }}>confirm delete</Button><Button small onClick={() => setConfirmDelete(null)}>cancel</Button></div>
+          : <Button small onClick={() => setConfirmDelete(roomName.trim())}>delete "{roomName.trim()}"</Button>
+      )}
+
       <SectionLabel>Sound room (interior)</SectionLabel>
       <Slider label="Length (x)" unit="m" value={r.length} min={2} max={12} step={0.1} onChange={(x) => setRoom({ length: x })} fmt={(x) => x.toFixed(1)} />
       <Slider label="Width (y)" unit="m" value={r.width} min={2} max={7} step={0.1} onChange={(x) => setRoom({ width: x })} fmt={(x) => x.toFixed(1)} />
       <Slider label="Position x" unit="m" value={r.x} min={0} max={v.length} step={0.1} onChange={(x) => setRoom({ x })} fmt={(x) => x.toFixed(1)} />
       <Slider label="Position y" unit="m" value={r.y} min={0} max={v.width} step={0.1} onChange={(x) => setRoom({ y: x })} fmt={(x) => x.toFixed(1)} />
       {!fits && <Note tone={T.red}>room does not fit inside the venue at this position</Note>}
-      <Field label="Source face"><Seg small value={r.source_face} options={[...FACES]} onChange={(f) => setRoom({ source_face: f })} /></Field>
-      <Slider label="Source inset" unit="m" value={r.source_inset} min={0.1} max={1.5} step={0.05} onChange={(x) => setRoom({ source_inset: x })} fmt={(x) => x.toFixed(2)} />
-      <Slider label="Source height" unit="m" value={r.source_height} min={0.2} max={v.height - 0.1} step={0.05} onChange={(x) => setRoom({ source_height: x })} fmt={(x) => x.toFixed(2)} />
 
-      <SectionLabel>Openings (other three faces)</SectionLabel>
-      {FACES.filter((f) => f !== r.source_face).map((f) => {
+      <SectionLabel>Openings</SectionLabel>
+      <Note>The opening on the source face (set in Simulate) is ignored by the solver.</Note>
+      {FACES.map((f) => {
         const o = r.openings[f] ?? { width: 0, height: 0 };
         const setO = (p: Partial<typeof o>) => setRoom({ openings: { ...r.openings, [f]: { ...o, ...p } } });
+        const isSrc = f === r.source_face;
         return (
-          <div key={f} style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}><Slider label={`${f} width`} unit="m" value={o.width} min={0} max={3} step={0.05} onChange={(x) => setO({ width: x })} fmt={(x) => x.toFixed(2)} /></div>
+          <div key={f} style={{ display: "flex", gap: 10, opacity: isSrc ? 0.45 : 1 }}>
+            <div style={{ flex: 1 }}><Slider label={`${f} width${isSrc ? " (source face)" : ""}`} unit="m" value={o.width} min={0} max={3} step={0.05} onChange={(x) => setO({ width: x })} fmt={(x) => x.toFixed(2)} /></div>
             <div style={{ flex: 1 }}><Slider label="height" unit="m" value={o.height} min={0} max={v.height} step={0.05} onChange={(x) => setO({ height: x })} fmt={(x) => x.toFixed(2)} /></div>
           </div>
         );
       })}
-
-      <SectionLabel>Listener (from room corner)</SectionLabel>
-      <Slider label="x" unit="m" value={l.x} min={0.1} max={r.length - 0.1} step={0.05} onChange={(x) => setL({ x })} fmt={(x) => x.toFixed(2)} />
-      <Slider label="y" unit="m" value={l.y} min={0.1} max={r.width - 0.1} step={0.05} onChange={(y) => setL({ y })} fmt={(x) => x.toFixed(2)} />
-      <Slider label="height" unit="m" value={l.z} min={0.1} max={v.height - 0.1} step={0.05} onChange={(z) => setL({ z })} fmt={(x) => x.toFixed(2)} />
-
-      <SectionLabel>Solver</SectionLabel>
-      <Slider label="FEM cap" unit="Hz" value={s.f_max} min={100} max={500} step={10} onChange={(x) => setS({ f_max: x })}
-        hint={`≈ ${Math.round((v.height * r.length * r.width) * 4.19 * Math.pow(s.f_max / 343, 3) + (2 * (r.length * r.width + (r.length + r.width) * v.height)) * 0.785 * Math.pow(s.f_max / 343, 2))} modes below cap`} />
-      <Slider label="Δf" unit="Hz" value={s.df} min={0.25} max={2} step={0.25} onChange={(x) => setS({ df: x })} fmt={(x) => x.toFixed(2)} hint={`impulse response ${(1 / s.df).toFixed(1)} s`} />
-      <Slider label="Nodes / λ" value={s.nodes_per_wavelength} min={4} max={12} step={1} onChange={(x) => setS({ nodes_per_wavelength: x })} />
-      <Field label="Modal basis" hint="analytic: exact box modes on the FEM mesh (fast) · fem: eigsh on K,M (general)">
-        <Seg small value={s.basis} options={["analytic", "fem"]} onChange={(b) => setS({ basis: b })} />
-      </Field>
-      <Slider label="Wall Zs angle" unit="°" value={s.wall_angle_deg} min={0} max={75} step={5} onChange={(x) => setS({ wall_angle_deg: x })}
-        hint="incidence angle of the TMM impedance used for the locally-reacting wall BC" />
-      <div style={{ marginTop: 12 }}>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="run note"
-          style={{ width: "100%", font: `500 11px ${mono}`, padding: 6, border: `1px solid ${T.rule}`, background: T.paper, marginBottom: 8 }} />
-        <Button primary disabled={running || !fits} onClick={() => onRun(note)}>{running ? "running…" : "run room solve"}</Button>
-      </div>
     </div>
   );
 }
 
-export function RoomPage({ scene, result, progress, slices }: { scene: Scene; result: RoomResult | null; progress: { status: string; progress: number; message: string; error?: string } | null; slices: number[][][] | null }) {
+/** Room tab main panel: the plan, nothing else. */
+export function RoomPage({ scene }: { scene: Scene }) {
+  return (
+    <div>
+      <Card title="Plan" note="venue with the sound room · sources ● · openings ▭ · listener ◎">
+        <PlanView scene={scene} />
+      </Card>
+      <Note>This tab defines geometry and placement only. Sources, listener, solver settings and results live in the Simulate tab; the wall build lives in the Wall tab.</Note>
+    </div>
+  );
+}
+
+/** Results block used by the Simulate tab. */
+export function RoomResults({ scene, result, slices, showPlan = false }: { scene: Scene; result: RoomResult | null; slices: number[][][] | null; showPlan?: boolean }) {
   const [sliceIdx, setSliceIdx] = useState(0);
   const [showSrc, setShowSrc] = useState(false);
   useEffect(() => { setSliceIdx(0); }, [result?.stats?.N_basis]);
@@ -77,7 +85,7 @@ export function RoomPage({ scene, result, progress, slices }: { scene: Scene; re
   const frfRows = useMemo(() => result ? rows(result.f, { sum: result.frf.sum_db, s1: showSrc ? result.frf.source_db[0] : null, s2: showSrc ? result.frf.source_db[1] : null }).filter((r) => (r.f as number) >= 20) : [], [result, showSrc]);
   const t60Rows = useMemo(() => result ? rows(result.t60.f, { schroeder: result.t60.schroeder, sabine: result.t60.sabine, eyring: result.t60.eyring }) : [], [result]);
   const modalRows = useMemo(() => result ? result.modes.filter((m) => m.T60 && m.f_damped > 5).map((m) => ({ f: m.f_damped, t60: m.T60 })) : [], [result]);
-
+  if (!result) return null;
   return (
     <div>
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
@@ -88,55 +96,37 @@ export function RoomPage({ scene, result, progress, slices }: { scene: Scene; re
         <Stat k="DOF" v={st ? st.mesh.nodes : "–"} />
         <Stat k="Basis" v={st ? `${st.N_basis} ${st.basis}` : "–"} />
       </div>
-      {progress && progress.status !== "done" && (
-        <Note tone={progress.status === "failed" ? T.red : T.amber}>
-          {progress.status} · {(progress.progress * 100).toFixed(0)} % {progress.message}
-          {progress.error && <pre style={{ whiteSpace: "pre-wrap" }}>{progress.error}</pre>}
-        </Note>
-      )}
-
-      <Card title="Plan" note="venue with the sound room · sources ● · openings ▭ · listener ◎">
-        <PlanView scene={scene} />
+      {showPlan && <Card title="Plan" note="venue with the sound room"><PlanView scene={scene} /></Card>}
+      <Card title="Frequency response at the listener" note={result.frf.reference}
+        right={<Button small onClick={() => setShowSrc(!showSrc)}>{showSrc ? "hide" : "show"} each source</Button>}>
+        <LogLineChart data={frfRows} xDomain={[20, Math.max(100, result.f[result.f.length - 1])]} yLabel="dB" series={[
+          { key: "sum", name: "both sources (coherent)", color: T.olive, width: 2.2 },
+          ...(showSrc ? [{ key: "s1", name: "source 1", color: T.slate, width: 1, dash: "3 2" }, { key: "s2", name: "source 2", color: T.violet, width: 1, dash: "3 2" }] : []),
+        ]} />
       </Card>
-
-      {result && (
-        <>
-          <Card title="Frequency response at the listener" note={result.frf.reference}
-            right={<Button small onClick={() => setShowSrc(!showSrc)}>{showSrc ? "hide" : "show"} each source</Button>}>
-            <LogLineChart data={frfRows} xDomain={[20, Math.max(100, result.f[result.f.length - 1])]} yLabel="dB" series={[
-              { key: "sum", name: "both sources (coherent)", color: T.olive, width: 2.2 },
-              ...(showSrc ? [{ key: "s1", name: "source 1", color: T.slate, width: 1, dash: "3 2" }, { key: "s2", name: "source 2", color: T.violet, width: 1, dash: "3 2" }] : []),
-            ]} />
-          </Card>
-
-          <Card title="Reverberation time" note="Schroeder T20 from the FEM impulse response per 1/3 octave · Sabine / Eyring from the TMM absorption · modal T60 = 1.10 / Im f">
-            <LogLineChart data={t60Rows} xDomain={[20, 10000]} yLabel="s" yDomain={[0, Math.max(1, ...result.t60.eyring.map((x) => Math.min(x, 3)), ...result.t60.schroeder.map((x) => x ? Math.min(x, 3) : 0)) * 1.1]} series={[
-              { key: "schroeder", name: "FEM (Schroeder)", color: T.olive, width: 2.4 },
-              { key: "eyring", name: "Eyring", color: T.slate, width: 1.4 },
-              { key: "sabine", name: "Sabine", color: T.ink2, width: 1, dash: "4 3" },
-            ]} />
-            <ModalScatter points={modalRows} fmax={result.f[result.f.length - 1]} />
-          </Card>
-
-          <Card title="Pressure map at listener height" note={`|p| dB re free field 1 m · z = ${result.slices.z.toFixed(2)} m`}
-            right={<select value={sliceIdx} onChange={(e) => setSliceIdx(parseInt(e.target.value))} style={{ font: `600 10px ${mono}`, padding: 3 }}>
-              {result.slices.freqs.map((f, i) => <option key={i} value={i}>{f.toFixed(1)} Hz{modeLabel(result, f)}</option>)}
-            </select>}>
-            {slices && slices[sliceIdx] && <Heatmap grid={slices[sliceIdx]} xs={result.slices.x} ys={result.slices.y} scene={scene} />}
-          </Card>
-
-          <Card title="Modes" note="rigid-wall eigenfrequencies with damped frequency and modal T60 from the quadratic eigenproblem">
-            <table style={{ width: "100%", borderCollapse: "collapse", font: `500 11px ${mono}` }}>
-              <thead><tr>{["f rigid", "f damped", "(nx ny nz)", "type", "T60"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
-              <tbody>{result.modes.filter((m) => m.f_rigid > 1).slice(0, 40).map((m, i) => (
-                <tr key={i}><td style={td}>{m.f_rigid.toFixed(1)}</td><td style={td}>{m.f_damped.toFixed(1)}</td><td style={td}>{m.n ? m.n.join(" ") : "?"}</td>
-                  <td style={{ ...td, color: m.type === "axial" ? T.red : m.type === "tangential" ? T.amber : T.ink2 }}>{m.type}</td><td style={td}>{m.T60 ? m.T60.toFixed(2) : "–"}</td></tr>
-              ))}</tbody>
-            </table>
-          </Card>
-        </>
-      )}
-      {!result && !progress && <Note>Set up the room in the rail and run the solve. Results are saved as a run.</Note>}
+      <Card title="Reverberation time" note="Schroeder T20 from the FEM impulse response per 1/3 octave · Sabine / Eyring from the TMM absorption · modal T60 = 1.10 / Im f">
+        <LogLineChart data={t60Rows} xDomain={[20, 10000]} yLabel="s" yDomain={[0, Math.max(1, ...result.t60.eyring.map((x) => Math.min(x, 3)), ...result.t60.schroeder.map((x) => x ? Math.min(x, 3) : 0)) * 1.1]} series={[
+          { key: "schroeder", name: "FEM (Schroeder)", color: T.olive, width: 2.4 },
+          { key: "eyring", name: "Eyring", color: T.slate, width: 1.4 },
+          { key: "sabine", name: "Sabine", color: T.ink2, width: 1, dash: "4 3" },
+        ]} />
+        <ModalScatter points={modalRows} fmax={result.f[result.f.length - 1]} />
+      </Card>
+      <Card title="Pressure map at listener height" note={`|p| dB re free field 1 m · z = ${result.slices.z.toFixed(2)} m`}
+        right={<select value={sliceIdx} onChange={(e) => setSliceIdx(parseInt(e.target.value))} style={{ font: `600 10px ${mono}`, padding: 3 }}>
+          {result.slices.freqs.map((f, i) => <option key={i} value={i}>{f.toFixed(1)} Hz{modeLabel(result, f)}</option>)}
+        </select>}>
+        {slices && slices[sliceIdx] && <Heatmap grid={slices[sliceIdx]} xs={result.slices.x} ys={result.slices.y} scene={scene} />}
+      </Card>
+      <Card title="Modes" note="rigid-wall eigenfrequencies with damped frequency and modal T60 from the quadratic eigenproblem">
+        <table style={{ width: "100%", borderCollapse: "collapse", font: `500 11px ${mono}` }}>
+          <thead><tr>{["f rigid", "f damped", "(nx ny nz)", "type", "T60"].map((h) => <th key={h} style={th}>{h}</th>)}</tr></thead>
+          <tbody>{result.modes.filter((m) => m.f_rigid > 1).slice(0, 40).map((m, i) => (
+            <tr key={i}><td style={td}>{m.f_rigid.toFixed(1)}</td><td style={td}>{m.f_damped.toFixed(1)}</td><td style={td}>{m.n ? m.n.join(" ") : "?"}</td>
+              <td style={{ ...td, color: m.type === "axial" ? T.red : m.type === "tangential" ? T.amber : T.ink2 }}>{m.type}</td><td style={td}>{m.T60 ? m.T60.toFixed(2) : "–"}</td></tr>
+          ))}</tbody>
+        </table>
+      </Card>
     </div>
   );
 }

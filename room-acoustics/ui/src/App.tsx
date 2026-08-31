@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { Card, Note } from "./primitives";
-import { RunsPage } from "./pages/RunsPage";
+
 import { CostPage, CostRail } from "./pages/CostPage";
-import { IsolationPage, IsolationRail } from "./pages/IsolationPage";
+
 import { RoomPage, RoomRail } from "./pages/RoomPage";
+import { SimulatePage, SimulateRail, type SimKinds } from "./pages/SimulatePage";
 import { WallPage, WallRail } from "./pages/WallPage";
 import { T, disp, mono } from "./theme";
-import type { IsolationResult, MaterialPresets, RoomResult, SavedWall, Scene, WallResult } from "./types";
+import type { IsolationResult, MaterialPresets, RoomResult, SavedRoom, SavedWall, Scene, WallResult } from "./types";
 
-type Tab = "wall" | "room" | "cost" | "isolation" | "runs";
+type Tab = "wall" | "room" | "simulate" | "cost";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("wall");
@@ -23,7 +24,16 @@ export default function App() {
   const [presets, setPresets] = useState<{ name: string; scene: Scene }[]>([]);
   const [walls, setWalls] = useState<SavedWall[]>([]);
   const refreshWalls = () => api.walls().then(setWalls).catch(() => {});
-  useEffect(() => { refreshWalls(); }, []);
+  const [rooms, setRooms] = useState<SavedRoom[]>([]);
+  const refreshRooms = () => api.rooms().then(setRooms).catch(() => {});
+  useEffect(() => { refreshWalls(); refreshRooms(); }, []);
+  const saveRoom = async (name: string) => {
+    if (!scene) return;
+    try { await api.saveRoom(name, scene.room); notify(`saved room "${name}"`); refreshRooms(); }
+    catch (e) { setErr(String(e)); }
+  };
+  const loadRoom = (r: SavedRoom) => { if (!scene) return; setScene({ ...scene, room: r.room }); notify(`loaded room "${r.name}"`); };
+  const deleteRoom = async (name: string) => { await api.deleteRoom(name); notify(`deleted room "${name}"`); refreshRooms(); };
   const saveWall = async (name: string) => {
     if (!scene) return;
     try { await api.saveWall(name, scene.wall); setScene({ ...scene, wall: { ...scene.wall, name } }); notify(`saved wall "${name}"`); refreshWalls(); }
@@ -89,7 +99,8 @@ export default function App() {
         if (p.status === "done") {
           const full = await api.run(roomRunId);
           setRoom(full.room ?? null);
-          setRoomSlices((await api.slices(roomRunId)).slices_db);
+          if (full.room) setRoomSlices((await api.slices(roomRunId)).slices_db);
+          if (full.isolation) { setIso(full.isolation); setIsoSlices((await api.isoSlices(roomRunId)).slices_db); }
           setRunsKey((k) => k + 1);
           setRoomRunId(null);
         } else if (p.status === "failed" || p.status === "cancelled") {
@@ -104,11 +115,13 @@ export default function App() {
     return () => { alive = false; };
   }, [roomRunId]);
 
-  const runRoom = async (note: string) => {
+  const runSim = async (note: string, kinds: SimKinds) => {
     if (!scene) return;
-    setRoom(null); setRoomSlices(null);
+    if (kinds.room) { setRoom(null); setRoomSlices(null); }
+    if (kinds.isolation) { setIso(null); setIsoSlices(null); }
     setRoomProgress({ status: "queued", progress: 0, message: "" });
-    const meta = await api.createRun(scene, ["wall", "room"], note);
+    const ks = ["wall", ...(kinds.room ? ["room"] : []), ...(kinds.isolation ? ["isolation"] : [])];
+    const meta = await api.createRun(scene, ks, note);
     setRoomRunId(meta.id);
   };
 
@@ -117,8 +130,8 @@ export default function App() {
     try {
       const full = await api.run(id);
       if (full.isolation) { setIso(full.isolation); setIsoSlices((await api.isoSlices(id)).slices_db); setIsoProgress(null); }
-      if (full.room) { setRoom(full.room); setRoomSlices((await api.slices(id)).slices_db); setRoomProgress(null); setTab("room"); notify(`loaded ${id}: inputs + room results`); return; }
-      if (full.isolation) { setTab("isolation"); notify(`loaded ${id}: inputs + isolation results`); return; }
+      if (full.room) { setRoom(full.room); setRoomSlices((await api.slices(id)).slices_db); setRoomProgress(null); }
+      if (full.room || full.isolation) { setTab("simulate"); notify(`loaded ${id}: inputs + results`); return; }
       const why = full.meta.status === "failed" ? `run failed${full.meta.error ? ` (${full.meta.error})` : ""} — no room results; re-run from the Room tab`
         : full.meta.status === "running" ? "run still in progress — results will appear when it finishes"
         : "run has wall results only";
@@ -173,7 +186,7 @@ export default function App() {
             style={{ font: `600 9px ${mono}`, padding: "4px 8px", border: `1px solid ${T.rule}`, background: "transparent", cursor: "pointer", letterSpacing: ".1em", textTransform: "uppercase" }}>save</button>
         </div>
         <nav style={{ display: "flex", gap: 2 }}>
-          {(["wall", "room", "cost", "isolation", "runs"] as Tab[]).map((k) => (
+          {(["wall", "room", "simulate", "cost"] as Tab[]).map((k) => (
             <button key={k} onClick={() => setTab(k)}
               style={{ padding: "6px 12px", border: `1px solid ${tab === k ? T.ink : T.rule}`, background: tab === k ? T.ink : "transparent", color: tab === k ? T.paper : T.ink2,
                 font: `600 10px ${mono}`, letterSpacing: ".12em", textTransform: "uppercase", cursor: "pointer", borderRadius: 2 }}>{k}</button>
@@ -184,21 +197,18 @@ export default function App() {
       {err && <div style={{ padding: "8px 22px" }}><Note tone={T.red}>{err}</Note></div>}
 
       {scene && (
-        <main style={{ display: "grid", gridTemplateColumns: tab === "runs" ? "minmax(0, 1fr)" : "320px minmax(0, 1fr)", gap: 20, padding: 20, maxWidth: 1800 }}>
-          {tab !== "runs" && (
-            <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
-              {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} walls={walls} onSaveWall={saveWall} onLoadWall={loadWall} onDeleteWall={deleteWall} />}
-              {tab === "cost" && <CostRail scene={scene} setScene={setScene} walls={walls} onLoadWall={loadWall} />}
-              {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} walls={walls} onLoadWall={loadWall} />}
-              {tab === "isolation" && <IsolationRail scene={scene} setScene={setScene} onRun={runIso} running={!!isoRunId} />}
-            </aside>
-          )}
+        <main style={{ display: "grid", gridTemplateColumns: "320px minmax(0, 1fr)", gap: 20, padding: 20, maxWidth: 1800 }}>
+          <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
+            {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} walls={walls} onSaveWall={saveWall} onLoadWall={loadWall} onDeleteWall={deleteWall} />}
+            {tab === "room" && <RoomRail scene={scene} setScene={setScene} rooms={rooms} onSaveRoom={saveRoom} onLoadRoom={loadRoom} onDeleteRoom={deleteRoom} />}
+            {tab === "simulate" && <SimulateRail scene={scene} setScene={setScene} onRun={runSim} running={!!roomRunId || !!isoRunId} />}
+            {tab === "cost" && <CostRail scene={scene} setScene={setScene} walls={walls} onLoadWall={loadWall} />}
+          </aside>
           <section style={{ minWidth: 0 }}>
             {tab === "wall" && <WallPage scene={scene} result={wall} materials={materials} onSave={save} />}
-            {tab === "room" && <RoomPage scene={scene} result={room} progress={roomProgress} slices={roomSlices} />}
+            {tab === "room" && <RoomPage scene={scene} />}
+            {tab === "simulate" && <SimulatePage scene={scene} room={room} roomSlices={roomSlices} iso={iso} isoSlices={isoSlices} progress={roomProgress ?? isoProgress} onLoadRun={loadRun} refreshKey={runsKey} />}
             {tab === "cost" && <CostPage scene={scene} />}
-            {tab === "isolation" && <IsolationPage scene={scene} result={iso} progress={isoProgress} slices={isoSlices} />}
-            {tab === "runs" && <RunsPage onLoad={loadRun} refreshKey={runsKey} />}
           </section>
         </main>
       )}

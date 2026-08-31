@@ -56,6 +56,7 @@ export interface CostSettings {
   ply_sheet_w: number; ply_sheet_h: number; ply_price_per_sheet: number; labour_fraction: number; fixed_costs: number;
 }
 export interface SavedWall { name: string; wall: WallStack; thickness_mm: number; layers: string[]; modified: number }
+export interface SavedRoom { name: string; room: SoundRoom; dims: string; modified: number }
 
 export interface IsolationSolverSettings { f_min: number; f_max: number; points_per_octave: number; nodes_per_wavelength: number; workers: number; receivers?: number[][] | null }
 

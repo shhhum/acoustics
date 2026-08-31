@@ -1,0 +1,15 @@
+{
+ "length": 5.8,
+ "width": 6.2,
+ "x": 1.0,
+ "y": 0.9,
+ "source_face": "-x",
+ "source_height": 1.2,
+ "source_inset": 0.5,
+ "openings": {
+  "+x": {
+   "width": 1.2,
+   "height": 2.0
+  }
+ }
+}
