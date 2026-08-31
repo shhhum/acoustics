@@ -107,7 +107,7 @@ export interface WallResult {
 
 export interface RunMeta {
   id: string; created: string; name: string; kinds: string[]; note: string; tags: string[]; status: string;
-  inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[];
+  inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[]; error?: string;
 }
 
 export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: RoomResult; isolation?: IsolationResult }

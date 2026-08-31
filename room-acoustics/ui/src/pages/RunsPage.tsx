@@ -86,7 +86,8 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (id: string, s: Scene
                 <input value={noteEdit} onChange={(e) => setNoteEdit(e.target.value)} style={{ flex: 1, font: `500 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }} />
                 <Button small onClick={async () => { const m = await api.patchRun(open.meta.id, { note: noteEdit }); setOpen({ ...open, meta: m }); setRuns(runs.map((r) => (r.id === m.id ? { ...r, note: m.note } : r))); }}>save note</Button>
               </div>
-              <div><b>status</b> {open.meta.status} · <b>kinds</b> {open.meta.kinds.join(", ")} · <b>hash</b> {open.meta.inputs_hash}</div>
+              <div><b>status</b> <span style={{ color: open.meta.status === "done" ? T.olive : open.meta.status === "failed" ? T.red : T.amber }}>{open.meta.status}</span> · <b>kinds</b> {open.meta.kinds.join(", ")} · <b>hash</b> {open.meta.inputs_hash}</div>
+              {open.meta.error && <Note tone={T.red}>{open.meta.error}</Note>}
               <div><b>timings</b> {Object.entries(open.meta.timings ?? {}).map(([k, v]) => `${k} ${v.toFixed(1)}s`).join(" · ")}</div>
               <div style={{ marginTop: 8 }}><b>provenance</b><pre style={{ font: `500 10px ${mono}`, margin: 0 }}>{JSON.stringify(open.meta.provenance, null, 1)}</pre></div>
             </div>
