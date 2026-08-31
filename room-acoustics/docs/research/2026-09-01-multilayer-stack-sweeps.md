@@ -190,3 +190,28 @@ Findings:
 - 20 cm: fabric → 30×150 (6 panels) → 160×25 (1 panel) → 15 gap → ply 9. 
 - 25 cm: fabric → 30×200 (8 panels) → 160×25 (1 panel) → 15 gap → ply 9.
 - 40 cm: fabric → 30×300 (12 panels) → 160×75 (3 panels) → 15 gap → ply 9.
+
+### Why the sharp 30|160 step beats a smooth gradient (2026-09-01, later)
+
+Head-to-head at 250 mm/ply 9 (reflected fraction): sharp 30×200|160×25 = **0.310** (50–150 Hz),
+3-step 30/60/160 = 0.320, 5-step taper 30/40/60/100/160 = 0.332, all identical within 0.002
+above 300 Hz. The smooth gradient is monotonically *worse* at bass, not just equal.
+
+The impedance-matching (adiabatic taper) argument fails here for two quantitative reasons:
+
+1. **The taper cannot be adiabatic where it matters.** Adiabatic matching needs a transition
+   region ≳ λ/4. λ/4 = 1.36 m at 63 Hz, 0.34 m at 250 Hz — the entire 240 mm cavity is
+   sub-wavelength across the design band, so the wave "sees" a lumped structure, not a ramp.
+   The taper only becomes resolvable above ~400 Hz — exactly where all variants already tie.
+2. **The buried step is screened into silence.** The 30|160 interface reflects strongly *locally*
+   (|R| ≈ 0.56), but through 200 mm of 30 kg/m³ the round trip costs 14 dB at 63 Hz rising to
+   42 dB at 2 kHz: the emerging reflection is 0.11 at 63 Hz, 0.03 at 250 Hz, 0.003 at 2 kHz.
+   An anechoic wedge needs its taper because its transition starts at the *front*, in
+   unattenuated air; a step buried behind an absorptive screen needs none.
+
+What the gradient actually costs: the mid-density middle panels (40–100 kg/m³) displace light
+wool from the front screen, raising the average flow resistivity of the section of the wall the
+bass actually interacts with — the same mechanism as every other loss in this campaign. The
+"smooth gradient" story is an appealing narrative for Wuppertal's wall, but the working
+ingredients are (a) a low-σ face, (b) maximum light depth, (c) one screened dense cap; grading
+smoothly between them is cosmetic above 300 Hz and mildly counterproductive below.
