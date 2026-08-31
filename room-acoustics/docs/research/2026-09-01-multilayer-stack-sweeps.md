@@ -104,3 +104,23 @@ dissipated on the second pass, and blocks transmission. The α-only single-densi
 main sweep tables was a 20/25 cm result and a ≤0.02 margin. The "wrong" version is only the
 reversed order (dense first: refl 0.60) — face density, not back density, is what reflects.
 Openground's various-density stack is therefore the *better* design, not a compromise.
+
+### Depth-dependence of the grading dominance (250/200 mm re-check)
+
+The 40 cm Pareto-dominance does **not** carry down unchanged — the original 250 mm sweep never
+tried backs >100 kg/m³, so re-probed with the energy split (fabric 1 + wool + ply 12):
+
+| 250 mm stack | refl 50–300 Hz | tran lo | TL 63–250 |
+|---|---|---|---|
+| 20 × 237 (α winner) | 0.236 | 0.037 | 20 dB |
+| 20×119 → 140×118 (50/50) | 0.295 | 0.004 | 32 dB |
+| **20×158 → 140×79 (⅔ light)** | **0.244** | 0.008 | **27 dB** |
+| 20×79 → 60×79 → 140×79 | 0.277 | 0.005 | 30 dB |
+
+At 250 mm a 50/50 heavy grade now costs real reflection (+0.06 low-band) — the light front is no
+longer deep enough to hide a 118 mm dense back. But a *thin* dense back (~80 mm of 140 kg/m³
+behind ~160 mm of light) is nearly free: +0.008 reflected for +7 dB TL. At 200 mm even that
+costs ~0.03–0.05. Rule of thumb: the dense back is invisible from the room once ~150–200 mm of
+light wool sits in front of it — grade as heavy as you like behind that screen; with less front
+depth, thin the dense layer or accept the reflection cost. (Consistent with Wilson
+WO2007073732A2's front/rear resistance split.)
