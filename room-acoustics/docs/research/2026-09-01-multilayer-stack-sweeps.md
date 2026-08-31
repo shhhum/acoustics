@@ -243,3 +243,27 @@ illusory — transmitted subs enter the hard venue shell and return through the 
 not a correctness knob; 100–128 is the balanced listening choice** (gives back ~0.01 punch-band
 reflection for ~0.05 at subs); sub control must come from geometry/placement/DSP, not wool.
 160K preset added to materials.json regardless so the UI can express the sweep optimum.
+
+### Near-brick wall section: 25 cm cavity to the venue's 10 cm brick wall (2026-09-01, later)
+
+Part of the room wall stands 25 cm from the venue's cement-paved brick wall. Modelled as the
+winner stack terminated by a 250 mm air cavity + rigid back (brick-as-190 kg/m² limp mass checks
+the rigid approximation within a few %). Reflected fraction into the room:
+
+| config | 20–30 | 30–50 | 50–150 | 150–300 |
+|---|---|---|---|---|
+| A rest of wall (venue-backed) | 0.59 | 0.55 | 0.31 | 0.09 |
+| B as-built + cavity + brick | 0.65 | **0.49** | **0.28** | 0.09 |
+| C no ply, open cavity | 0.65 | 0.49 | 0.26 | 0.10 |
+| D no ply, cavity stuffed +30K×150 | **0.57** | **0.46** | **0.26** | 0.10 |
+
+Findings: (1) the feared cavity resonances are a non-event — the 686/1372 Hz half-wave modes are
+fully damped by the wool, and the ply-on-air-spring mass-air-mass resonance (predicted 51 Hz)
+appears as an *absorption peak*, not a reflection spike (B beats A 0.42 vs 0.50 at 50 Hz);
+(2) the as-built section is *better* than the free wall from 30–150 Hz (brick returns energy for
+a second pass through the wool) and slightly worse only at 20–30 Hz (below the mass-air-mass
+resonance the air cushion stiffens); (3) best use of the gap: **drop the ply on that section
+(the brick already provides the isolation) and stuff ~150 mm of 30K against the brick** —
+best or tied-best in every band, including the subs. Caveats: plane-wave TMM; lateral modes of
+the sealed wall-to-wall channel and flanking are not modelled; D needs physical access to the
+cavity during the build.

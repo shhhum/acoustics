@@ -22,10 +22,6 @@
    "d_fibre": 8e-6
   },
   {
-   "kind": "airgap",
-   "thickness": 0.015
-  },
-  {
    "kind": "rockwool",
    "name": "160K",
    "density": 160.0,
