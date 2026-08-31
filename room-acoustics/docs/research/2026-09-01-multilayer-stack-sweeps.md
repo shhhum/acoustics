@@ -155,3 +155,38 @@ larger venue). 122 stacks: light front 20/30 × dense back 60/100/140 × back 40
 **Standing 25 cm recommendation (reflection-first): fabric → 20–30 kg/m³ × 200 → 140 kg/m³ × 40
 → 9 mm ply.** If a few dB more isolation is ever wanted, thicken the dense back toward 80 mm and
 pay ~0.04 reflection.
+
+### Buildable-materials sweep (2026-09-01, later): densities {30,40,60,80,100,160}, 25 mm increments
+
+Same objective (reflection-first, ply 9 mm, fabric 1 mm). Wool quantised to 25 mm; since the
+240/190/390 mm cavities are not multiples of 25, every build carries a forced ≥15 mm leftover
+gap — its position was swept too (behind the wool vs between the last two wool layers).
+1244 / 322 / 9566 stacks at 250 / 200 / 400 mm.
+
+| total | winner (room→venue) | refl 50–300 | TL 63–250 | all-30 control |
+|---|---|---|---|---|
+| 200 mm | 30×150 → 160×25 → gap15 → ply9 | 0.284 | 20 dB | 0.317 / 17 dB |
+| 250 mm | 30×200 → 160×25 → gap15 → ply9 | 0.229 | 23 dB | 0.258 / 20 dB |
+| 400 mm | 30×300 → 160×75 → gap15 → ply9 | 0.179 | 36 dB | 0.189 / 28 dB |
+
+Findings:
+1. **The same architecture wins at every total: max light wool + one thin dense cap.** With 20 kg/m³
+   unavailable the face is 30; the absorption-booster back collapses to a single 25 mm panel of
+   the *densest* available product (160) at 200/250 mm, growing to 75 mm at 400 mm. Quantisation
+   costs ~0.025 refl_lo vs the unconstrained optimum (0.229 vs 0.204 at 250 mm), all of it from
+   30-vs-20 face density.
+2. **The forced leftover gap is least harmful between the light wool and the dense cap** (mid
+   beats at-ply by 0.003–0.008 at 200/250 mm; a wash at 400 mm). Intuition: in front of the
+   dense cap the gap sits where particle velocity is still high, adding a little λ/4 depth;
+   behind the cap it is shielded and inert. Still a cost vs hypothetical non-quantised wool —
+   the gap remains filler, never a feature.
+3. Sensitivity is tiny around the winner (top ~10 stacks within 0.005): substituting a 40 or 60
+   panel for part of the light run, or 100 for the 160 cap, loses almost nothing — build from
+   whatever is cheapest per panel in that band.
+4. Dense-cap thickness rule refined: ~10 % of cavity depth at 200–250 mm (one panel), ~20 % at
+   400 mm — consistent with the "dense back invisible behind 150–200 mm light screen" rule.
+
+**Buildable recommendations (reflection-first):**
+- 20 cm: fabric → 30×150 (6 panels) → 160×25 (1 panel) → 15 gap → ply 9. 
+- 25 cm: fabric → 30×200 (8 panels) → 160×25 (1 panel) → 15 gap → ply 9.
+- 40 cm: fabric → 30×300 (12 panels) → 160×75 (3 panels) → 15 gap → ply 9.
