@@ -97,6 +97,14 @@ def compute_wall(stack: WallStack, settings: WallSolverSettings | None = None, a
     out["TL"]["mass_law_normal"] = stat.mass_law_tl(f, m_ply, False, air).tolist() if m_ply > 0 else None
     out["TL"]["mass_law_field"] = stat.mass_law_tl(f, m_ply, True, air).tolist() if m_ply > 0 else None
 
+    # energy budget, field incidence, venue-backed: incident = reflected + dissipated (heat) + transmitted.
+    # alpha_air.field = 1 - reflected by construction; this splits the remainder.
+    Zf_air = tmm.surface_impedance(layers, f, th_f, "air", air)
+    R2 = tmm.paris_average(np.abs(tmm.reflection(Zf_air, th_f, air)) ** 2, w_f)
+    tau_f = tmm.paris_average(np.abs(tmm.transmission_coefficient(layers, f, th_f, air)) ** 2, w_f)
+    out["energy"] = {"reflected": R2.tolist(), "transmitted": tau_f.tolist(),
+                     "dissipated": np.clip(1.0 - R2 - tau_f, 0.0, 1.0).tolist()}
+
     # Miki cross-check (same stack, all rockwool layers forced to Miki)
     layers_miki, _ = build_layers(stack, air, force_model="miki")
     Zm = tmm.surface_impedance(layers_miki, f, th_f, "rigid", air)

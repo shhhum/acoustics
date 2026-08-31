@@ -125,6 +125,7 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
   }, [result, backing, showMiki, ds]);
   const zRows = useMemo(() => result ? rows(result.f, { re: result[`Z_${backing}`].re, im: result[`Z_${backing}`].im }) : [], [result, backing]);
   const tlRows = useMemo(() => result ? rows(result.f, { field: result.TL.field, normal: result.TL.normal, mass: result.TL.mass_law_field }) : [], [result]);
+  const eRows = useMemo(() => result?.energy ? rows(result.f, { refl: result.energy.reflected, diss: result.energy.dissipated, tran: result.energy.transmitted }) : [], [result]);
 
   const m = result?.markers ?? {};
   const refs = [
@@ -140,6 +141,7 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
         <Stat k="λ/4 roll-off" v={m.quarter_wave_f_low ? fmt.hz(m.quarter_wave_f_low) : "–"} u="Hz" />
         <Stat k="Ply coincidence" v={m.f_critical_plywood ? fmt.hz(m.f_critical_plywood) : "–"} u="Hz" />
         <Stat k="α field @125" v={result ? fmt.n(at(result.f, result.alpha_air.field, 125)) : "–"} />
+        <Stat k="reflected @125" v={result?.energy ? fmt.n(at(result.f, result.energy.reflected, 125)) : "–"} tone={result?.energy && at(result.f, result.energy.reflected, 125) > 0.4 ? T.red : undefined} />
         <Stat k="TL field @125" v={result ? fmt.n(at(result.f, result.TL.field, 125), 1) : "–"} u="dB" />
         <Stat k="compute" v={result?.elapsed_ms ? result.elapsed_ms.toFixed(0) : "–"} u="ms" />
       </div>
@@ -186,6 +188,14 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
           { key: "normal", name: "normal", color: T.slate, width: 1.2 },
           { key: "mass", name: "mass law (ply, field)", color: T.ink2, width: 1, dash: "3 3" },
         ]} />
+      </Card>
+
+      <Card title="Energy budget" note="field incidence, venue-backed · incident = reflected + dissipated (heat in wool) + transmitted to venue · design goal: minimise reflected">
+        {eRows.length > 0 && <LogLineChart data={eRows} yDomain={[0, 1]} yTicks={[0, 0.25, 0.5, 0.75, 1]} series={[
+          { key: "refl", name: "reflected |R|²", color: T.red, width: 2.4 },
+          { key: "diss", name: "dissipated (heat)", color: T.olive, width: 1.6 },
+          { key: "tran", name: "transmitted", color: T.slate, width: 1.6, dash: "4 2" },
+        ]} />}
       </Card>
 
       <Card title="Layer parameters">

@@ -78,3 +78,29 @@ high on PET-as-facing; unverifiable without their build sheet.
 Engine: `sim/soundroom/{tmm,porous,wall}.py` @ M7; sweep: `scripts/sweep_wall.py`
 (213/213/354 stacks at 200/250/400 mm); Wuppertal candidates: one-off probe (same engine,
 same settings), results quoted above. Negative results kept deliberately.
+
+## Addendum (2026-09-01, later): energy budget and the reflection objective
+
+`compute_wall` now emits `energy = {reflected, dissipated, transmitted}` (field incidence,
+venue-backed; reflected = 1 − α_air.field exactly — asserted in tests), plotted as a new
+"Energy budget" card. With "minimise reflection into the room" made explicit, the 40 cm
+comparison sharpens:
+
+| 40 cm stack | refl 50–300 Hz | diss | tran | refl 0.3–2 kHz | TL 63–250 |
+|---|---|---|---|---|---|
+| PET + 30 kg full depth (H3) | 0.23 | 0.77 | 0.01 | 0.06 | 31 dB |
+| PET + 30/60/100 graded (H1) | 0.26 | 0.74 | 0.00 | 0.06 | 42 dB |
+| PET + 20/60/140 graded (H6) | **0.22** | 0.78 | 0.00 | **0.04** | **44 dB** |
+| 100 kg full depth | 0.52 | 0.48 | 0.00 | 0.23 | 59 dB |
+| reversed 140/60/20 (control) | 0.60 | 0.40 | 0.00 | 0.30 | — |
+
+**Correction to Finding 1's emphasis: at 40 cm depth, grading is Pareto-dominant, not a
+trade-off.** H6 (20 face → 140 back) beats all-light H3 on *both* reflection (0.22 vs 0.23 low,
+0.04 vs 0.06 mid) and TL (+13 dB). Mechanism: reflection is governed by the impedance the wave
+meets *first* — a 20–30 kg/m³ face at 40 cm depth attenuates the wave so strongly before it
+reaches the dense back layers that their impedance jump is barely visible from the room; the
+dense back then reflects the *residual* energy back into the wool interior, where it is
+dissipated on the second pass, and blocks transmission. The α-only single-density winner in the
+main sweep tables was a 20/25 cm result and a ≤0.02 margin. The "wrong" version is only the
+reversed order (dense first: refl 0.60) — face density, not back density, is what reflects.
+Openground's various-density stack is therefore the *better* design, not a compromise.

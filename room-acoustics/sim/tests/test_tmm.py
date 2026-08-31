@@ -131,3 +131,16 @@ def test_multiple_airgaps_supported():
     res = compute_wall(w)
     assert sum(1 for r in res["layers"] if r["layer"] == "air gap") == 2
     assert len(res["markers"]["gap_half_wave_dips"]) == 6
+
+
+def test_energy_budget_conserves_and_matches_alpha():
+    """reflected + dissipated + transmitted = 1; alpha_air.field = 1 - reflected exactly."""
+    res = compute_wall(WallStack())
+    r = np.array(res["energy"]["reflected"])
+    d = np.array(res["energy"]["dissipated"])
+    t = np.array(res["energy"]["transmitted"])
+    for x in (r, d, t):
+        assert np.all(x >= 0) and np.all(x <= 1)
+    assert np.all(1.0 - r - t >= -1e-9)  # dissipated never clipped, i.e. physical
+    np.testing.assert_allclose(r + d + t, 1.0, atol=1e-9)
+    np.testing.assert_allclose(1.0 - r, np.array(res["alpha_air"]["field"]), atol=1e-9)

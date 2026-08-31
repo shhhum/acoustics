@@ -99,6 +99,7 @@ export interface WallResult {
   alpha_air: AlphaSet;
   alpha_rigid_miki_field: number[];
   TL: { normal: number[]; field: number[]; mass_law_normal: number[] | null; mass_law_field: number[] | null; octave: { f: number[]; field: (number | null)[] } };
+  energy?: { reflected: number[]; dissipated: number[]; transmitted: number[] };  // absent on runs saved before M7
   markers: Record<string, any>;
   warnings: string[];
   elapsed_ms?: number;
