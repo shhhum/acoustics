@@ -47,7 +47,7 @@ class AirGap(BaseModel):
 
 
 class Plywood(BaseModel):
-    thickness: float = Field(0.012, ge=0, description="m; 0 = no skin")
+    thickness: float = Field(0.009, ge=0, description="m; 0 = no skin (project decision 2026-09-01: 9 mm)")
     density: float = Field(600.0, gt=0)
     E: float = Field(8e9, gt=0, description="Young's modulus Pa")
     nu: float = Field(0.3, ge=0, lt=0.5)

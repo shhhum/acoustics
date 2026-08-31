@@ -124,3 +124,34 @@ costs ~0.03–0.05. Rule of thumb: the dense back is invisible from the room onc
 light wool sits in front of it — grade as heavy as you like behind that screen; with less front
 depth, thin the dense layer or accept the reflection cost. (Consistent with Wilson
 WO2007073732A2's front/rear resistance split.)
+
+### Reflection-first re-rank at 250 mm: 9 mm ply, mid-stack gap tested (2026-09-01, later)
+
+Project decisions folded in: ply fixed at **9 mm** (now the schema/preset default), and the
+objective made explicit — *minimise reflection; transmission secondary* (the room sits inside a
+larger venue). 122 stacks: light front 20/30 × dense back 60/100/140 × back 40–100 mm × gap
+0–60 mm between the two wool layers.
+
+| 250 mm stack (room→venue) | refl 50–300 Hz | refl 0.3–2 kHz | TL 63–250 |
+|---|---|---|---|
+| **20×200 → 140×40 → ply9 (winner)** | **0.204** | 0.043 | 21 dB |
+| 20×185 → gap 15 → 140×40 | 0.214 | 0.043 | 21 dB |
+| 20×175 → gap 25 → 140×40 | 0.221 | 0.043 | 21 dB |
+| 20×240 all-light (control) | 0.227 | 0.044 | 18 dB |
+| 20×140 → gap 60 → 140×40 | 0.250 | 0.044 | 20 dB |
+| prev. rec (12 mm ply): 20×158 → 140×79 | 0.241 | 0.041 | 27 dB |
+
+1. **A thin dense back now beats all-light on reflection itself** (0.204 vs 0.227): behind
+   200 mm of light wool the 140 kg/m³ × 40 mm layer is invisible from the room but reflects
+   residual energy back through the wool for a second dissipation pass — it acts as an
+   *absorption booster*, not a barrier. Reflection-first scoring therefore *shrinks* the dense
+   back (79 → 40 mm) rather than deleting it.
+2. **Mid-stack air gap: monotonically negative** (negative result). Every mm of gap between the
+   wool layers costs low-band reflection (0.204 → 0.214 → 0.221 → 0.233 → 0.250 at
+   0/15/25/40/60 mm); the gap displaces wool from the front screen and the λ/4 gain never
+   compensates at this depth. Third gap-placement negative result in this campaign; mechanism
+   consistent throughout: at ≥200 mm wool depth, wool always beats air.
+
+**Standing 25 cm recommendation (reflection-first): fabric → 20–30 kg/m³ × 200 → 140 kg/m³ × 40
+→ 9 mm ply.** If a few dB more isolation is ever wanted, thicken the dense back toward 80 mm and
+pay ~0.04 reflection.
