@@ -215,3 +215,31 @@ bass actually interacts with — the same mechanism as every other loss in this 
 "smooth gradient" story is an appealing narrative for Wuppertal's wall, but the working
 ingredients are (a) a low-σ face, (b) maximum light depth, (c) one screened dense cap; grading
 smoothly between them is cosmetic above 300 Hz and mildly counterproductive below.
+
+### Sub-band (20–50 Hz) behaviour of the dense cap (2026-09-01, later; user observation confirmed)
+
+Andrew observed in the UI that 140 kg/m³ caps reflect 20–30 Hz noticeably more than 100 kg/m³.
+Confirmed (30×200 + cap×25 + g15 + ply9, reflected fraction):
+
+| cap | 20–30 Hz | 30–50 | 50–150 | 150–300 | tran 20–30 |
+|---|---|---|---|---|---|
+| 100×25 | 0.525 | 0.525 | 0.326 | 0.093 | 0.086 |
+| 140×25 | 0.570 | 0.540 | 0.315 | 0.093 | 0.058 |
+| 160×25 | 0.590 | 0.548 | 0.311 | 0.093 | 0.048 |
+| no cap (30×225) | 0.447 | 0.517 | 0.357 | 0.094 | 0.162 |
+
+Mechanism: the light-wool screen that silences the cap interface at 63+ Hz (14+ dB round trip)
+thins to **8–9 dB at 20–30 Hz**, so the cap's impedance step becomes partially visible from the
+room, and heavier caps reflect more. The cap trade is therefore real but band-split: 160 wins
+50–300 Hz by ~0.015, 100 wins 20–50 Hz by ~0.05. A thicker lighter cap (100×50) is *not* the
+fix — it displaces screen depth and lands worse than 100×25 at subs (0.585).
+
+Perspective before optimising this: (a) every variant reflects 0.45–0.59 at 20–30 Hz — the
+depth limit; no 250 mm wall absorbs subs meaningfully. (b) 20–30 Hz is at/below the room's
+first axial mode: in-room sub response is mode/pressure-zone dominated, where plane-wave α is a
+weak lever. (c) the "escape valve" reading of the lighter cap's higher transmission is partly
+illusory — transmitted subs enter the hard venue shell and return through the openings
+(2026-08-30: venue avg only 3–6 dB below room). Verdict: **cap density 100–160 is a taste knob,
+not a correctness knob; 100–128 is the balanced listening choice** (gives back ~0.01 punch-band
+reflection for ~0.05 at subs); sub control must come from geometry/placement/DSP, not wool.
+160K preset added to materials.json regardless so the UI can express the sweep optimum.

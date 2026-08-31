@@ -72,6 +72,13 @@
       "sigma_estimate": 95300,
       "sigma_strutt": 81000,
       "source": "Rockwool UK; σ estimated"
+    },
+    {
+      "name": "160K",
+      "density": 160,
+      "sigma_estimate": 117100,
+      "sigma_strutt": 100000,
+      "source": "160 kg/m³ slab (user request, ProRox-class HT board); σ estimated (Bies–Hansen d=8µm / Strutt)"
     }
   ],
   "rockwool_measured": [
