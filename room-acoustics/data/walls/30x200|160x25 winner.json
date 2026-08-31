@@ -1,0 +1,51 @@
+{
+ "name": "30x200|160x25 winner",
+ "fabric": {
+  "thickness": 0.001,
+  "sigma": 300000.0,
+  "Rs": null,
+  "areal_mass": 0.3
+ },
+ "layers": [
+  {
+   "kind": "rockwool",
+   "name": "30K",
+   "density": 30.0,
+   "thickness": 0.2,
+   "model": "jca",
+   "sigma": null,
+   "phi": null,
+   "alpha_inf": null,
+   "Lambda": null,
+   "Lambda_p": null,
+   "k0p": null,
+   "d_fibre": 8e-6
+  },
+  {
+   "kind": "airgap",
+   "thickness": 0.015
+  },
+  {
+   "kind": "rockwool",
+   "name": "160K",
+   "density": 160.0,
+   "thickness": 0.025,
+   "model": "jca",
+   "sigma": null,
+   "phi": null,
+   "alpha_inf": null,
+   "Lambda": null,
+   "Lambda_p": null,
+   "k0p": null,
+   "d_fibre": 8e-6
+  }
+ ],
+ "plywood": {
+  "thickness": 0.009,
+  "density": 600.0,
+  "E": 8000000000.0,
+  "nu": 0.3,
+  "loss": 0.03,
+  "model": "plate"
+ }
+}

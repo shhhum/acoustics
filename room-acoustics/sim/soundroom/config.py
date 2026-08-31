@@ -185,8 +185,10 @@ class CostSettings(BaseModel):
     panel_w: float = Field(1.2, gt=0, description="rockwool panel width, m")
     panel_h: float = Field(0.6, gt=0, description="rockwool panel height, m")
     waste_fraction: float = Field(0.1, ge=0, le=1)
-    rockwool_price_per_panel: list[float] = Field(default_factory=list, description="per layer index; missing → default")
+    rockwool_price_per_panel: list[float] = Field(default_factory=list, description="per wool-layer index; missing → default")
     rockwool_price_per_panel_default: float = Field(12.0, ge=0)
+    rockwool_panel_thickness: list[float] = Field(default_factory=list,
+        description="purchasable panel thickness per wool-layer index, m; 0/missing → layer bought as one panel through its depth")
     fabric_price_per_m2: float = Field(15.0, ge=0)
     ply_sheet_w: float = Field(1.2, gt=0)
     ply_sheet_h: float = Field(2.4, gt=0)

@@ -184,7 +184,7 @@ export default function App() {
           {tab !== "runs" && (
             <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
               {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} walls={walls} onSaveWall={saveWall} onLoadWall={loadWall} onDeleteWall={deleteWall} />}
-              {tab === "cost" && <CostRail scene={scene} setScene={setScene} />}
+              {tab === "cost" && <CostRail scene={scene} setScene={setScene} walls={walls} onLoadWall={loadWall} />}
               {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} walls={walls} onLoadWall={loadWall} />}
               {tab === "isolation" && <IsolationRail scene={scene} setScene={setScene} onRun={runIso} running={!!isoRunId} />}
             </aside>

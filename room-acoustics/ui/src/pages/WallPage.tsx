@@ -24,6 +24,7 @@ export function WallRail({ scene, setScene, materials, walls, onSaveWall, onLoad
   const presets = materials?.rockwool ?? [];
   const [wallName, setWallName] = useState(w.name && w.name !== "wall" ? w.name : "");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const nameOk = !/[/\\]/.test(wallName) && !wallName.trim().startsWith(".");
 
   return (
     <div>
@@ -37,9 +38,11 @@ export function WallRail({ scene, setScene, materials, walls, onSaveWall, onLoad
       </Field>
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
         <input value={wallName} onChange={(e) => setWallName(e.target.value)} placeholder="wall name"
+          onKeyDown={(e) => { if (e.key === "Enter" && wallName.trim() && nameOk) onSaveWall(wallName.trim()); }}
           style={{ flex: 1, font: `500 11px ${mono}`, padding: 5, border: `1px solid ${T.rule}`, background: T.paper }} />
-        <Button small primary disabled={!wallName.trim()} onClick={() => onSaveWall(wallName.trim())}>{walls.some((s) => s.name === wallName.trim()) ? "overwrite" : "save wall"}</Button>
+        <Button small primary disabled={!wallName.trim() || !nameOk} onClick={() => onSaveWall(wallName.trim())}>{walls.some((s) => s.name === wallName.trim()) ? "overwrite" : "save wall"}</Button>
       </div>
+      {!nameOk && <Note tone={T.red}>name can't contain / or \ or start with a dot</Note>}
       {walls.some((s) => s.name === wallName.trim()) && (
         confirmDelete === wallName.trim()
           ? <div style={{ display: "flex", gap: 6 }}><Button small onClick={async () => { await onDeleteWall(wallName.trim()); setConfirmDelete(null); setWallName(""); }}>confirm delete</Button><Button small onClick={() => setConfirmDelete(null)}>cancel</Button></div>

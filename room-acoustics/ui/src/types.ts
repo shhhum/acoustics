@@ -52,7 +52,7 @@ export interface RoomSolverSettings { f_max: number; df: number; nodes_per_wavel
 
 export interface CostSettings {
   currency: string; panel_w: number; panel_h: number; waste_fraction: number;
-  rockwool_price_per_panel: number[]; rockwool_price_per_panel_default: number; fabric_price_per_m2: number;
+  rockwool_price_per_panel: number[]; rockwool_price_per_panel_default: number; rockwool_panel_thickness: number[]; fabric_price_per_m2: number;
   ply_sheet_w: number; ply_sheet_h: number; ply_price_per_sheet: number; labour_fraction: number; fixed_costs: number;
 }
 export interface SavedWall { name: string; wall: WallStack; thickness_mm: number; layers: string[]; modified: number }
