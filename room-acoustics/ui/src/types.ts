@@ -2,6 +2,7 @@
 export type PorousModel = "jca" | "jcal" | "miki" | "db";
 
 export interface RockwoolLayer {
+  kind: "rockwool";
   name?: string | null;
   density: number;
   thickness: number;
@@ -16,10 +17,25 @@ export interface RockwoolLayer {
 }
 
 export interface Fabric { thickness: number; sigma: number; Rs?: number | null; areal_mass: number }
-export interface AirGap { thickness: number }
+export interface AirGapLayer { kind: "airgap"; thickness: number }
+export type StackLayer = RockwoolLayer | AirGapLayer;
 export interface Plywood { thickness: number; density: number; E: number; nu: number; loss: number; model: "plate" | "limp" }
 
-export interface WallStack { name: string; fabric: Fabric; rockwool: RockwoolLayer[]; airgap: AirGap; plywood: Plywood }
+export interface WallStack { name: string; fabric: Fabric; layers: StackLayer[]; plywood: Plywood }
+
+export const woolLayers = (w: WallStack): RockwoolLayer[] =>
+  w.layers.filter((l): l is RockwoolLayer => l.kind === "rockwool");
+
+/** Fold the v1 wall schema (rockwool[] + single trailing airgap) into ordered `layers`; the server does the same. */
+export function migrateWall(w: any): WallStack {
+  if (w.layers) return w as WallStack;
+  const layers: StackLayer[] = (w.rockwool ?? []).map((r: any) => ({ ...r, kind: "rockwool" }));
+  if (w.airgap?.thickness > 0) layers.push({ kind: "airgap", thickness: w.airgap.thickness });
+  const { rockwool: _r, airgap: _a, ...rest } = w;
+  return { ...rest, layers };
+}
+
+export const migrateScene = (s: Scene): Scene => ({ ...s, wall: migrateWall(s.wall) });
 
 export interface WallSolverSettings { f_min: number; f_max: number; n_freq: number; n_theta: number; theta_field_max: number; theta_random_max: number }
 
@@ -36,7 +52,7 @@ export interface RoomSolverSettings { f_max: number; df: number; nodes_per_wavel
 
 export interface CostSettings {
   currency: string; panel_w: number; panel_h: number; waste_fraction: number;
-  rockwool_price_per_panel: number[]; rockwool_price_per_panel_default: number; fabric_price_per_m2: number;
+  rockwool_price_per_panel: number[]; rockwool_price_per_panel_default: number; rockwool_panel_thickness: number[]; fabric_price_per_m2: number;
   ply_sheet_w: number; ply_sheet_h: number; ply_price_per_sheet: number; labour_fraction: number; fixed_costs: number;
 }
 export interface SavedWall { name: string; wall: WallStack; thickness_mm: number; layers: string[]; modified: number }
@@ -83,6 +99,7 @@ export interface WallResult {
   alpha_air: AlphaSet;
   alpha_rigid_miki_field: number[];
   TL: { normal: number[]; field: number[]; mass_law_normal: number[] | null; mass_law_field: number[] | null; octave: { f: number[]; field: (number | null)[] } };
+  energy?: { reflected: number[]; dissipated: number[]; transmitted: number[] };  // absent on runs saved before M7
   markers: Record<string, any>;
   warnings: string[];
   elapsed_ms?: number;
@@ -90,7 +107,7 @@ export interface WallResult {
 
 export interface RunMeta {
   id: string; created: string; name: string; kinds: string[]; note: string; tags: string[]; status: string;
-  inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[];
+  inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[]; error?: string;
 }
 
 export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: RoomResult; isolation?: IsolationResult }

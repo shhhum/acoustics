@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Button, Card, Field, NumberInput, Note, SectionLabel, Seg, Slider, Stat, fmt } from "../primitives";
 import { LogLineChart, rows } from "../charts";
 import { T, mono } from "../theme";
-import type { MaterialPresets, RockwoolLayer, SavedWall, Scene, WallResult } from "../types";
+import type { MaterialPresets, SavedWall, Scene, StackLayer, WallResult } from "../types";
 
 type Backing = "rigid" | "air";
 
@@ -12,18 +12,19 @@ export function WallRail({ scene, setScene, materials, walls, onSaveWall, onLoad
 }) {
   const w = scene.wall;
   const set = (patch: Partial<typeof w>) => setScene({ ...scene, wall: { ...w, ...patch } });
-  const setWool = (i: number, patch: Partial<RockwoolLayer>) =>
-    set({ rockwool: w.rockwool.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const setLayer = (i: number, patch: Record<string, unknown>) =>
+    set({ layers: w.layers.map((l, j) => (j === i ? ({ ...l, ...patch } as StackLayer) : l)) });
   const move = (i: number, d: number) => {
     const j = i + d;
-    if (j < 0 || j >= w.rockwool.length) return;
-    const arr = [...w.rockwool];
+    if (j < 0 || j >= w.layers.length) return;
+    const arr = [...w.layers];
     [arr[i], arr[j]] = [arr[j], arr[i]];
-    set({ rockwool: arr });
+    set({ layers: arr });
   };
   const presets = materials?.rockwool ?? [];
   const [wallName, setWallName] = useState(w.name && w.name !== "wall" ? w.name : "");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const nameOk = !/[/\\]/.test(wallName) && !wallName.trim().startsWith(".");
 
   return (
     <div>
@@ -37,9 +38,11 @@ export function WallRail({ scene, setScene, materials, walls, onSaveWall, onLoad
       </Field>
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 6 }}>
         <input value={wallName} onChange={(e) => setWallName(e.target.value)} placeholder="wall name"
+          onKeyDown={(e) => { if (e.key === "Enter" && wallName.trim() && nameOk) onSaveWall(wallName.trim()); }}
           style={{ flex: 1, font: `500 11px ${mono}`, padding: 5, border: `1px solid ${T.rule}`, background: T.paper }} />
-        <Button small primary disabled={!wallName.trim()} onClick={() => onSaveWall(wallName.trim())}>{walls.some((s) => s.name === wallName.trim()) ? "overwrite" : "save wall"}</Button>
+        <Button small primary disabled={!wallName.trim() || !nameOk} onClick={() => onSaveWall(wallName.trim())}>{walls.some((s) => s.name === wallName.trim()) ? "overwrite" : "save wall"}</Button>
       </div>
+      {!nameOk && <Note tone={T.red}>name can't contain / or \ or start with a dot</Note>}
       {walls.some((s) => s.name === wallName.trim()) && (
         confirmDelete === wallName.trim()
           ? <div style={{ display: "flex", gap: 6 }}><Button small onClick={async () => { await onDeleteWall(wallName.trim()); setConfirmDelete(null); setWallName(""); }}>confirm delete</Button><Button small onClick={() => setConfirmDelete(null)}>cancel</Button></div>
@@ -57,38 +60,42 @@ export function WallRail({ scene, setScene, materials, walls, onSaveWall, onLoad
       <NumberInput label="Rs override" unit="Pa·s/m" value={w.fabric.Rs ?? null} step={50} min={0}
         onChange={(v) => set({ fabric: { ...w.fabric, Rs: v } })} />
 
-      <SectionLabel>Rockwool (room side first)</SectionLabel>
-      {w.rockwool.map((r, i) => (
+      <SectionLabel>Stack (room side first)</SectionLabel>
+      {w.layers.map((l, i) => (
         <div key={i} style={{ border: `1px solid ${T.rule}`, borderRadius: 2, padding: "8px 10px", marginBottom: 10, background: T.paper }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-            <span style={{ font: `700 10px ${mono}`, letterSpacing: ".1em" }}>LAYER {i + 1}</span>
+            <span style={{ font: `700 10px ${mono}`, letterSpacing: ".1em" }}>{l.kind === "airgap" ? "AIR GAP" : `WOOL ${w.layers.slice(0, i + 1).filter((x) => x.kind === "rockwool").length}`}</span>
             <span style={{ flex: 1 }} />
             <Button small onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
-            <Button small onClick={() => move(i, 1)} disabled={i === w.rockwool.length - 1}>↓</Button>
-            <Button small onClick={() => set({ rockwool: w.rockwool.filter((_, j) => j !== i) })} disabled={w.rockwool.length <= 1}>×</Button>
+            <Button small onClick={() => move(i, 1)} disabled={i === w.layers.length - 1}>↓</Button>
+            <Button small onClick={() => set({ layers: w.layers.filter((_, j) => j !== i) })} disabled={w.layers.length <= 1}>×</Button>
           </div>
-          <Field label="Product">
-            <select value={presets.find((p) => p.density === r.density)?.name ?? "custom"}
-              onChange={(e) => { const p = presets.find((q) => q.name === e.target.value); if (p) setWool(i, { name: p.name, density: p.density, sigma: null }); }}
-              style={{ width: "100%", font: `600 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
-              <option value="custom">custom density</option>
-              {presets.map((p) => <option key={p.name} value={p.name}>{p.name} · {p.density} kg/m³</option>)}
-            </select>
-          </Field>
-          <Slider label="Density" unit="kg/m³" value={r.density} min={20} max={160} step={1} onChange={(v) => setWool(i, { density: v, name: null })} />
-          <Slider label="Thickness" unit="mm" value={r.thickness * 1000} min={0} max={200} step={5} onChange={(v) => setWool(i, { thickness: v / 1000 })} fmt={(v) => v.toFixed(0)} />
-          <div style={{ display: "flex", gap: 10 }}>
-            <NumberInput label="σ override" unit="Pa·s/m²" value={r.sigma ?? null} step={1000} min={100} onChange={(v) => setWool(i, { sigma: v })} />
-            <Field label="Model">
-              <Seg small value={r.model} options={["jca", "jcal", "miki"]} onChange={(v) => setWool(i, { model: v })} />
+          {l.kind === "airgap" ? (
+            <Slider label="Gap" unit="mm" value={l.thickness * 1000} min={0} max={400} step={5} onChange={(v) => setLayer(i, { thickness: v / 1000 })} fmt={(v) => v.toFixed(0)} />
+          ) : (<>
+            <Field label="Product">
+              <select value={presets.find((p) => p.density === l.density)?.name ?? "custom"}
+                onChange={(e) => { const p = presets.find((q) => q.name === e.target.value); if (p) setLayer(i, { name: p.name, density: p.density, sigma: null }); }}
+                style={{ width: "100%", font: `600 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
+                <option value="custom">custom density</option>
+                {presets.map((p) => <option key={p.name} value={p.name}>{p.name} · {p.density} kg/m³</option>)}
+              </select>
             </Field>
-          </div>
+            <Slider label="Density" unit="kg/m³" value={l.density} min={20} max={160} step={1} onChange={(v) => setLayer(i, { density: v, name: null })} />
+            <Slider label="Thickness" unit="mm" value={l.thickness * 1000} min={0} max={200} step={5} onChange={(v) => setLayer(i, { thickness: v / 1000 })} fmt={(v) => v.toFixed(0)} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <NumberInput label="σ override" unit="Pa·s/m²" value={l.sigma ?? null} step={1000} min={100} onChange={(v) => setLayer(i, { sigma: v })} />
+              <Field label="Model">
+                <Seg small value={l.model} options={["jca", "jcal", "miki"]} onChange={(v) => setLayer(i, { model: v })} />
+              </Field>
+            </div>
+          </>)}
         </div>
       ))}
-      <Button onClick={() => set({ rockwool: [...w.rockwool, { density: 60, thickness: 0.05, model: "jca", d_fibre: 8e-6 }] })}>+ add layer</Button>
-
-      <SectionLabel>Air gap</SectionLabel>
-      <Slider label="Gap" unit="mm" value={w.airgap.thickness * 1000} min={0} max={400} step={5} onChange={(v) => set({ airgap: { thickness: v / 1000 } })} fmt={(v) => v.toFixed(0)} />
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        <Button onClick={() => set({ layers: [...w.layers, { kind: "rockwool", density: 60, thickness: 0.05, model: "jca", d_fibre: 8e-6 }] })}>+ rockwool</Button>
+        <Button onClick={() => set({ layers: [...w.layers, { kind: "airgap", thickness: 0.05 }] })}>+ air gap</Button>
+      </div>
 
       <SectionLabel>Plywood (venue side)</SectionLabel>
       <Slider label="Thickness" unit="mm" value={w.plywood.thickness * 1000} min={0} max={25} step={1} onChange={(v) => set({ plywood: { ...w.plywood, thickness: v / 1000 } })} fmt={(v) => v.toFixed(0)}
@@ -121,6 +128,7 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
   }, [result, backing, showMiki, ds]);
   const zRows = useMemo(() => result ? rows(result.f, { re: result[`Z_${backing}`].re, im: result[`Z_${backing}`].im }) : [], [result, backing]);
   const tlRows = useMemo(() => result ? rows(result.f, { field: result.TL.field, normal: result.TL.normal, mass: result.TL.mass_law_field }) : [], [result]);
+  const eRows = useMemo(() => result?.energy ? rows(result.f, { refl: result.energy.reflected, diss: result.energy.dissipated, tran: result.energy.transmitted }) : [], [result]);
 
   const m = result?.markers ?? {};
   const refs = [
@@ -136,6 +144,7 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
         <Stat k="λ/4 roll-off" v={m.quarter_wave_f_low ? fmt.hz(m.quarter_wave_f_low) : "–"} u="Hz" />
         <Stat k="Ply coincidence" v={m.f_critical_plywood ? fmt.hz(m.f_critical_plywood) : "–"} u="Hz" />
         <Stat k="α field @125" v={result ? fmt.n(at(result.f, result.alpha_air.field, 125)) : "–"} />
+        <Stat k="reflected @125" v={result?.energy ? fmt.n(at(result.f, result.energy.reflected, 125)) : "–"} tone={result?.energy && at(result.f, result.energy.reflected, 125) > 0.4 ? T.red : undefined} />
         <Stat k="TL field @125" v={result ? fmt.n(at(result.f, result.TL.field, 125), 1) : "–"} u="dB" />
         <Stat k="compute" v={result?.elapsed_ms ? result.elapsed_ms.toFixed(0) : "–"} u="ms" />
       </div>
@@ -182,6 +191,14 @@ export function WallPage({ scene, result, materials, onSave }: { scene: Scene; r
           { key: "normal", name: "normal", color: T.slate, width: 1.2 },
           { key: "mass", name: "mass law (ply, field)", color: T.ink2, width: 1, dash: "3 3" },
         ]} />
+      </Card>
+
+      <Card title="Energy budget" note="field incidence, venue-backed · incident = reflected + dissipated (heat in wool) + transmitted to venue · design goal: minimise reflected">
+        {eRows.length > 0 && <LogLineChart data={eRows} yDomain={[0, 1]} yTicks={[0, 0.25, 0.5, 0.75, 1]} series={[
+          { key: "refl", name: "reflected |R|²", color: T.red, width: 2.4 },
+          { key: "diss", name: "dissipated (heat)", color: T.olive, width: 1.6 },
+          { key: "tran", name: "transmitted", color: T.slate, width: 1.6, dash: "4 2" },
+        ]} />}
       </Card>
 
       <Card title="Layer parameters">

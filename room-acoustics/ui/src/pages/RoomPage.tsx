@@ -16,7 +16,7 @@ export function RoomRail({ scene, setScene, onRun, running, walls, onLoadWall }:
   return (
     <div>
       <SectionLabel>Wall</SectionLabel>
-      <Field label="Current wall" hint={`${scene.wall.rockwool.filter((l) => l.thickness > 0).map((l) => `${l.density}×${(l.thickness * 1000).toFixed(0)}`).join(" → ")}${scene.wall.airgap.thickness > 0 ? ` → gap ${(scene.wall.airgap.thickness * 1000).toFixed(0)}` : ""} → ply ${(scene.wall.plywood.thickness * 1000).toFixed(0)} mm`}>
+      <Field label="Current wall" hint={`${scene.wall.layers.filter((l) => l.thickness > 0).map((l) => l.kind === "airgap" ? `gap ${(l.thickness * 1000).toFixed(0)}` : `${l.density}×${(l.thickness * 1000).toFixed(0)}`).join(" → ")} → ply ${(scene.wall.plywood.thickness * 1000).toFixed(0)} mm`}>
         <select value="" onChange={(e) => { const w = walls.find((x) => x.name === e.target.value); if (w) onLoadWall(w); }}
           style={{ width: "100%", font: `600 11px ${mono}`, padding: 4, border: `1px solid ${T.rule}`, background: T.paper }}>
           <option value="">{scene.wall.name || "unnamed wall"} — load a saved wall…</option>
@@ -152,7 +152,7 @@ const td: React.CSSProperties = { padding: "3px 6px", borderBottom: `1px solid $
 export function PlanView({ scene, children }: { scene: Scene; children?: React.ReactNode }) {
   const v = scene.venue, r = scene.room, l = scene.listener;
   const W = 760, S = W / v.length, H = v.width * S;
-  const t = scene.wall.fabric.thickness + scene.wall.rockwool.reduce((a, b) => a + b.thickness, 0) + scene.wall.airgap.thickness + scene.wall.plywood.thickness;
+  const t = scene.wall.fabric.thickness + scene.wall.layers.reduce((a, b) => a + b.thickness, 0) + scene.wall.plywood.thickness;
   const ins = r.source_inset;
   const src = {
     "-x": [[ins, ins], [ins, r.width - ins]], "+x": [[r.length - ins, ins], [r.length - ins, r.width - ins]],

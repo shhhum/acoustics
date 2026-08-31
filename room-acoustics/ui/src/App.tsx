@@ -117,9 +117,13 @@ export default function App() {
     try {
       const full = await api.run(id);
       if (full.isolation) { setIso(full.isolation); setIsoSlices((await api.isoSlices(id)).slices_db); setIsoProgress(null); }
-      if (full.room) { setRoom(full.room); setRoomSlices((await api.slices(id)).slices_db); setRoomProgress(null); setTab("room"); return; }
-      if (full.isolation) { setTab("isolation"); return; }
-    } catch { /* wall-only run */ }
+      if (full.room) { setRoom(full.room); setRoomSlices((await api.slices(id)).slices_db); setRoomProgress(null); setTab("room"); notify(`loaded ${id}: inputs + room results`); return; }
+      if (full.isolation) { setTab("isolation"); notify(`loaded ${id}: inputs + isolation results`); return; }
+      const why = full.meta.status === "failed" ? `run failed${full.meta.error ? ` (${full.meta.error})` : ""} — no room results; re-run from the Room tab`
+        : full.meta.status === "running" ? "run still in progress — results will appear when it finishes"
+        : "run has wall results only";
+      notify(`loaded ${id} inputs. ${why}`);
+    } catch { notify(`loaded ${id} inputs (results unavailable)`); }
     setTab("wall");
   };
 
@@ -184,7 +188,7 @@ export default function App() {
           {tab !== "runs" && (
             <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
               {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} walls={walls} onSaveWall={saveWall} onLoadWall={loadWall} onDeleteWall={deleteWall} />}
-              {tab === "cost" && <CostRail scene={scene} setScene={setScene} />}
+              {tab === "cost" && <CostRail scene={scene} setScene={setScene} walls={walls} onLoadWall={loadWall} />}
               {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} walls={walls} onLoadWall={loadWall} />}
               {tab === "isolation" && <IsolationRail scene={scene} setScene={setScene} onRun={runIso} running={!!isoRunId} />}
             </aside>
