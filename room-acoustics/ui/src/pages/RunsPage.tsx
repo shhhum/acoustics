@@ -4,6 +4,7 @@ import { LogLineChart, rows } from "../charts";
 import { Button, Card, Note } from "../primitives";
 import { T, mono } from "../theme";
 import type { RunFull, RunMeta, Scene } from "../types";
+import { migrateScene, migrateWall } from "../types";
 
 const COLOURS = [T.olive, T.slate, T.violet, T.red];
 
@@ -60,7 +61,7 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (id: string, s: Scene
                     <td style={td}>{s.sigma_d_over_rho_c?.toFixed(1)}</td>
                     <td style={td}>{s.t60_schroeder_125 != null ? `${s.t60_schroeder_125.toFixed(2)} s` : ""}</td>
                     <td style={td}>{s.D_venue_avg_fem_125 != null ? `${s.D_venue_avg_fem_125.toFixed(1)} dB` : ""}</td>
-                    <td style={td}><Button small onClick={async () => onLoad(r.id, (await api.run(r.id)).inputs)}>load</Button></td>
+                    <td style={td}><Button small onClick={async () => onLoad(r.id, migrateScene((await api.run(r.id)).inputs))}>load</Button></td>
                   </tr>
                 );
               })}
@@ -90,12 +91,11 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (id: string, s: Scene
               <div style={{ marginTop: 8 }}><b>provenance</b><pre style={{ font: `500 10px ${mono}`, margin: 0 }}>{JSON.stringify(open.meta.provenance, null, 1)}</pre></div>
             </div>
             <div>
-              <div><b>wall</b> fabric {(open.inputs.wall.fabric.thickness * 1000).toFixed(1)}mm → {open.inputs.wall.rockwool.map((r) => `${r.density}kg/m³×${(r.thickness * 1000).toFixed(0)}mm`).join(" → ")}
-                {open.inputs.wall.airgap.thickness > 0 ? ` → gap ${(open.inputs.wall.airgap.thickness * 1000).toFixed(0)}mm` : ""} → ply {(open.inputs.wall.plywood.thickness * 1000).toFixed(0)}mm</div>
+              <div><b>wall</b> fabric {(open.inputs.wall.fabric.thickness * 1000).toFixed(1)}mm → {migrateWall(open.inputs.wall).layers.map((l) => l.kind === "airgap" ? `gap ${(l.thickness * 1000).toFixed(0)}mm` : `${l.density}kg/m³×${(l.thickness * 1000).toFixed(0)}mm`).join(" → ")} → ply {(open.inputs.wall.plywood.thickness * 1000).toFixed(0)}mm</div>
               <div><b>room</b> {open.inputs.room.length}×{open.inputs.room.width} m at ({open.inputs.room.x}, {open.inputs.room.y}) · sources on {open.inputs.room.source_face} · openings {Object.entries(open.inputs.room.openings).map(([f, o]) => `${f} ${o.width}×${o.height}`).join(", ")}</div>
               <div><b>listener</b> ({open.inputs.listener.x}, {open.inputs.listener.y}, {open.inputs.listener.z})</div>
               <div><b>summary</b><pre style={{ font: `500 10px ${mono}`, margin: 0 }}>{JSON.stringify(open.meta.summary, null, 1)}</pre></div>
-              <div style={{ marginTop: 8 }}><Button primary onClick={() => onLoad(open.meta.id, open.inputs)}>load this run into the editor</Button></div>
+              <div style={{ marginTop: 8 }}><Button primary onClick={() => onLoad(open.meta.id, migrateScene(open.inputs))}>load this run into the editor</Button></div>
             </div>
           </div>
         </Card>

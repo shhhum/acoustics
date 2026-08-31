@@ -1,8 +1,15 @@
 {
   "version": 2,
-  "issued": "2026-08-30",
+  "issued": "2026-09-01",
   "note": "Presets with provenance. sigma_estimate values are calculations (Bies–Hansen d=8µm and Arup Strutt a=3µm), ±50 %; sigma_measured entries are published measurements. See docs/research/2026-08-30-patents-vendor-data.md §B1.",
   "rockwool": [
+    {
+      "name": "30K",
+      "density": 30,
+      "sigma_estimate": 9000,
+      "sigma_strutt": 7000,
+      "source": "30 kg/m³ slab (user request, e.g. Comfortbatt-class light batt); σ estimated (Bies–Hansen d=8µm / Strutt)"
+    },
     {
       "name": "Safe'n'Sound",
       "density": 40,

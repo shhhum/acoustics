@@ -2,6 +2,7 @@
 export type PorousModel = "jca" | "jcal" | "miki" | "db";
 
 export interface RockwoolLayer {
+  kind: "rockwool";
   name?: string | null;
   density: number;
   thickness: number;
@@ -16,10 +17,25 @@ export interface RockwoolLayer {
 }
 
 export interface Fabric { thickness: number; sigma: number; Rs?: number | null; areal_mass: number }
-export interface AirGap { thickness: number }
+export interface AirGapLayer { kind: "airgap"; thickness: number }
+export type StackLayer = RockwoolLayer | AirGapLayer;
 export interface Plywood { thickness: number; density: number; E: number; nu: number; loss: number; model: "plate" | "limp" }
 
-export interface WallStack { name: string; fabric: Fabric; rockwool: RockwoolLayer[]; airgap: AirGap; plywood: Plywood }
+export interface WallStack { name: string; fabric: Fabric; layers: StackLayer[]; plywood: Plywood }
+
+export const woolLayers = (w: WallStack): RockwoolLayer[] =>
+  w.layers.filter((l): l is RockwoolLayer => l.kind === "rockwool");
+
+/** Fold the v1 wall schema (rockwool[] + single trailing airgap) into ordered `layers`; the server does the same. */
+export function migrateWall(w: any): WallStack {
+  if (w.layers) return w as WallStack;
+  const layers: StackLayer[] = (w.rockwool ?? []).map((r: any) => ({ ...r, kind: "rockwool" }));
+  if (w.airgap?.thickness > 0) layers.push({ kind: "airgap", thickness: w.airgap.thickness });
+  const { rockwool: _r, airgap: _a, ...rest } = w;
+  return { ...rest, layers };
+}
+
+export const migrateScene = (s: Scene): Scene => ({ ...s, wall: migrateWall(s.wall) });
 
 export interface WallSolverSettings { f_min: number; f_max: number; n_freq: number; n_theta: number; theta_field_max: number; theta_random_max: number }
 

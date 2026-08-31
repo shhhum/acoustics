@@ -2,6 +2,7 @@ import React from "react";
 import { Card, Field, Note, NumberInput, SectionLabel, Slider, Stat } from "../primitives";
 import { T, mono } from "../theme";
 import type { Scene } from "../types";
+import { woolLayers } from "../types";
 
 /** Bill of materials for the sound-room walls: rockwool panels per layer, fabric area, plywood sheets. Pure arithmetic, saved with the scene. */
 export function costModel(scene: Scene) {
@@ -12,7 +13,7 @@ export function costModel(scene: Scene) {
   const netWall = grossWall - openArea;
   const panelArea = c.panel_w * c.panel_h;
   const waste = 1 + c.waste_fraction;
-  const layers = w.rockwool.filter((l) => l.thickness > 0).map((l, i) => {
+  const layers = woolLayers(w).filter((l) => l.thickness > 0).map((l, i) => {
     const panels = Math.ceil((netWall * waste) / panelArea);
     const price = c.rockwool_price_per_panel[i] ?? c.rockwool_price_per_panel_default;
     return { i, name: l.name ?? `${l.density} kg/m³`, density: l.density, thickness_mm: l.thickness * 1000, panels, price, cost: panels * price };
@@ -31,7 +32,7 @@ export function costModel(scene: Scene) {
 export function CostRail({ scene, setScene }: { scene: Scene; setScene: (s: Scene) => void }) {
   const c = scene.cost;
   const set = (patch: Partial<typeof c>) => setScene({ ...scene, cost: { ...c, ...patch } });
-  const layers = scene.wall.rockwool.filter((l) => l.thickness > 0);
+  const layers = woolLayers(scene.wall).filter((l) => l.thickness > 0);
   return (
     <div>
       <SectionLabel>Panels</SectionLabel>

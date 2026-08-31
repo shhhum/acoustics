@@ -1,12 +1,13 @@
 """Input schema (pydantic) for the wall stack and the scene.
 
 Units are SI throughout (m, kg, Pa·s/m², Hz). Layer order in ``WallStack``
-runs from the sound-room side outward: fabric → rockwool[0..n] → air gap → plywood.
+runs from the sound-room side outward: fabric → layers[0..n] (rockwool and air
+gaps in any order) → plywood.
 """
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -14,6 +15,7 @@ SCHEMA_VERSION = 1
 
 
 class RockwoolLayer(BaseModel):
+    kind: Literal["rockwool"] = "rockwool"
     name: str | None = None
     density: float = Field(45.0, gt=0, description="bulk density kg/m³")
     thickness: float = Field(0.05, ge=0, description="m")
@@ -40,6 +42,7 @@ class Fabric(BaseModel):
 
 
 class AirGap(BaseModel):
+    kind: Literal["airgap"] = "airgap"
     thickness: float = Field(0.0, ge=0, description="m; 0 = none")
 
 
@@ -56,18 +59,52 @@ class Plywood(BaseModel):
         return self.density * self.thickness
 
 
+StackLayer = Annotated[RockwoolLayer | AirGap, Field(discriminator="kind")]
+
+
 class WallStack(BaseModel):
+    """Fabric → layers (rockwool / air gaps, room side first, re-orderable) → plywood."""
+
     name: str = "wall"
     fabric: Fabric = Fabric()
-    rockwool: list[RockwoolLayer] = Field(default_factory=lambda: [RockwoolLayer(name="Safe'n'Sound", density=40, thickness=0.05),
-                                                                    RockwoolLayer(name="RW3", density=60, thickness=0.05)])
-    airgap: AirGap = AirGap()
+    layers: list[StackLayer] = Field(default_factory=lambda: [RockwoolLayer(name="Safe'n'Sound", density=40, thickness=0.05),
+                                                              RockwoolLayer(name="RW3", density=60, thickness=0.05)])
     plywood: Plywood = Plywood()
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_legacy(cls, data):
+        """v1 schema had `rockwool: [...]` + a single trailing `airgap`; fold both into `layers`."""
+        if not isinstance(data, dict) or "layers" in data:
+            return data
+        if "rockwool" not in data and "airgap" not in data:
+            return data
+        data = dict(data)
+        layers: list = []
+        for r in data.pop("rockwool", []):
+            if isinstance(r, dict):
+                r = {**r, "kind": "rockwool"}
+            layers.append(r)
+        gap = data.pop("airgap", None)
+        if gap is not None:
+            t = gap.get("thickness", 0.0) if isinstance(gap, dict) else getattr(gap, "thickness", 0.0)
+            if t > 0:
+                layers.append({"kind": "airgap", "thickness": t})
+        data["layers"] = layers
+        return data
+
+    @property
+    def rockwool(self) -> list[RockwoolLayer]:
+        """Rockwool layers in stack order (compat helper; excludes air gaps)."""
+        return [l for l in self.layers if isinstance(l, RockwoolLayer)]
+
+    @property
+    def airgaps(self) -> list[AirGap]:
+        return [l for l in self.layers if isinstance(l, AirGap)]
 
     @property
     def thickness(self) -> float:
-        return (self.fabric.thickness + sum(r.thickness for r in self.rockwool)
-                + self.airgap.thickness + self.plywood.thickness)
+        return self.fabric.thickness + sum(l.thickness for l in self.layers) + self.plywood.thickness
 
 
 class WallSolverSettings(BaseModel):

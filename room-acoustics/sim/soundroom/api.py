@@ -99,7 +99,8 @@ def list_walls():
         except Exception:  # noqa: BLE001
             continue
         out.append({"name": p.stem, "wall": w.model_dump(mode="json"), "thickness_mm": w.thickness * 1e3,
-                    "layers": [f"{r.density:g}×{r.thickness*1e3:.0f}" for r in w.rockwool if r.thickness > 0],
+                    "layers": [(f"gap×{l.thickness*1e3:.0f}" if l.kind == "airgap" else f"{l.density:g}×{l.thickness*1e3:.0f}")
+                               for l in w.layers if l.thickness > 0],
                     "modified": p.stat().st_mtime})
     return out
 
