@@ -267,3 +267,34 @@ resonance the air cushion stiffens); (3) best use of the gap: **drop the ply on 
 best or tied-best in every band, including the subs. Caveats: plane-wave TMM; lateral modes of
 the sealed wall-to-wall channel and flanking are not modelled; D needs physical access to the
 cavity during the build.
+
+### Literature corroboration of the sharp-step-vs-gradient finding (2026-09-01, web search)
+
+1. **US8631899B2 (Zickmantel / SilenceResearch GmbH) — direct corroboration.** Claims multi-layer
+   porous absorbers built from deliberately LARGE impedance steps between adjacent layers —
+   density steps ≥ 20 kg/m³, flow-resistance steps ≥ 5 kPa·s/m² — stating "the larger an
+   impedance shift, the lower the frequencies which are absorbed as a result of said impedance
+   shift", explicitly inverting the smooth-transition intuition, for 200–700 Hz absorption in
+   thin (10 cm) build-ups. Our 30|160 step (Δρ = 130 kg/m³, Δσ ≈ 108 kPa·s/m²) is exactly this
+   architecture.
+2. **Boulvert et al., J. Appl. Phys. 2019 ("Optimally graded porous material for broadband
+   perfect absorption") — corroborates the regime split.** Their optimal *continuous* grading is
+   a monotonic resistivity increase — but on a 30 mm layer absorbing 3.9–19.5 kHz, i.e. a layer
+   comparable to or thicker than λ/3: the regime where a taper IS resolvable. They state the
+   gradient improves mid/high frequency but NOT low frequency — matching our finding that the
+   gradient is cosmetic below the sub-wavelength limit. Gradients are a wavelength-scale tool;
+   bass walls are not wavelength-scale.
+3. **Anechoic-wedge literature** (e.g. Acoust. wedge design studies; empirical chamber cutoff
+   work): the standard rule is treatment depth ≈ λ/4 at the cutoff for the taper to work —
+   corroborating the adiabatic-length argument for why no 240 mm transition can "match" at
+   50–300 Hz.
+4. **Cox & D'Antonio, *Acoustic Absorbers and Diffusers*** (textbook): too-high flow resistance
+   at the FRONT causes face reflection; the front layer's resistivity is the reflection-critical
+   parameter — the mechanism behind every ordering result in this campaign.
+5. Adjacent but distinct: Wilson WO2007073732A2 (thin high-resistance screen over low-resistance
+   bulk) is another non-gradient two-element design; a 2026 automotive study (WEVJ 17(2):75) finds
+   stacking sequence governs mid-high-frequency absorption (full text paywalled, not verified).
+
+Verdict: the sharp light|dense step is patented practice (Zickmantel), and the graded-absorber
+literature itself restricts smooth grading's benefit to wavelength-scale layers and mid/high
+frequencies — consistent with, not contradicting, our sweep.
