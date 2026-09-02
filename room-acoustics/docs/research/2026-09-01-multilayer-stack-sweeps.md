@@ -348,3 +348,24 @@ so full wool still wins overall. (6) Sub-band trade unchanged: bigger caps cost 
 
 **Buildable picks (panels are 25 mm):** 200 mm: 6×40K + 1×160K · 250 mm: 7×40K + 2×160K
 (or 8+1, −2 dB TL) · 400 mm: 11×40K + 4×160K. Gap in front of the cap in all cases.
+
+### Final 235 mm candidates head-to-head, gap removed (2026-09-03)
+
+Decision: drop the forced 15 mm gap and take the wall to 235 mm (fabric 1 + 225 wool + ply 9).
+Cost of the thinning vs the 250 mm gapped winner: refl 50–300 goes 0.265 → 0.269 (negligible)
+for 15 mm of room regained. Two builds, both 9 panels:
+
+| | A: 40×200 + 160×25 (8+1) | B: 40×175 + 160×50 (7+2) |
+|---|---|---|
+| refl 20–30 / 30–50 Hz | **0.63 / 0.58** | 0.68 / 0.61 |
+| refl 50–300 Hz | 0.269 | 0.269 |
+| refl 0.3–4 kHz | identical | identical |
+| α field 63/125/250 | 0.55 / 0.77 / 0.86 | 0.54 / 0.77 / 0.86 |
+| TL 63 / 250 / 1k | 16.5 / 34.8 / 67.8 dB | **19.0 / 37.9 / 77.0 dB** |
+| σd/ρc | 13.9 | 20.1 |
+
+From 50 Hz up the two are indistinguishable (Δ ≤ 0.002 everywhere) — the extra 25 mm of 160
+sits entirely behind the screen. They differ only where the screen thins: at 20–50 Hz the
+smaller cap reflects less (−0.05 at 20–30), and in TL, where B is +2–3 dB low and up to +15 dB
+high. Pure taste knob: **A for the listening room (subs), B for isolation.** Under the standing
+reflection-first objective the pick is **A: 8 × 40K + 1 × 160K, dense panel at the ply.**
