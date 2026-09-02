@@ -322,3 +322,29 @@ equivalent to 30-stone (σ ≈ 6–9 kPa·s/m²) — the better ask is lighter g
 (4) Fallback that needs no new sourcing: Safe'n'Sound 40 stone full front costs only +0.03
 refl vs baseline. Glass caveats vs stone: similar acoustics at equal σ; worse fire rating
 class and sag; fine inside a closed wall.
+
+### 40K/160K-only thickness sweep (2026-09-03, supplier constraint)
+
+Only 40 and 160 kg/m³ stone available. Same protocol (25 mm steps, ply 9, fabric 1,
+reflection-first, gap position swept). Ranked by refl 50–300 Hz:
+
+| total | winner | refl 50–300 | refl 20–50 | TL 63–250 | all-40 control |
+|---|---|---|---|---|---|
+| 200 | 40×150 → g15 → 160×25 | 0.302 | 0.61 | 22 dB | 0.331 / 19 dB |
+| 250 | **40×175 → g15 → 160×50** | 0.265 | 0.63 | 27 dB | 0.287 / 22 dB |
+| 400 | 40×275 → 160×100 → g15 | 0.244 | 0.54 | 43 dB | 0.249 / 32 dB |
+
+Findings: (1) the light-front + dense-cap architecture survives the constraint; with a 40 face
+the optimal cap grows (25→50 mm at 250 mm) because the relative σ step is smaller. (2) The
+forced gap prefers the mid position (in front of the cap) as before, worth ~0.005. (3) At
+250 mm, 40×200+160×25 ties the winner (0.266) with 2 dB less TL — one fewer dense panel if
+price matters. (4) 40-vs-30 face costs ~0.036 refl at 250 mm — the price of the sourcing
+constraint, consistent with the earlier density scan. (5) At 400 mm with the over-resistive
+40 face, huge-gap variants (40×100 + g215!) tie the full-wool stacks on 50–300 (0.241 vs
+0.244) — the first time gap-for-wool ever breaks even in this campaign, exactly as σd/ρc
+theory predicts for an over-resistive fill — but they give up 10+ dB TL and 0.08 at 20–50 Hz,
+so full wool still wins overall. (6) Sub-band trade unchanged: bigger caps cost 20–50 Hz
+(0.60→0.67 as cap 25→75 at 250 mm); shrink the cap to 25 mm if sub reflection is the priority.
+
+**Buildable picks (panels are 25 mm):** 200 mm: 6×40K + 1×160K · 250 mm: 7×40K + 2×160K
+(or 8+1, −2 dB TL) · 400 mm: 11×40K + 4×160K. Gap in front of the cap in all cases.
