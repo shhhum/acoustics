@@ -298,3 +298,27 @@ cavity during the build.
 Verdict: the sharp light|dense step is patented practice (Zickmantel), and the graded-absorber
 literature itself restricts smooth grading's benefit to wavelength-scale layers and mid/high
 frequencies — consistent with, not contradicting, our sweep.
+
+### Supplier substitution check: 32 kg/m³ glass fiber for the 30 kg/m³ stone front (2026-09-03)
+
+Supplier has no 30 kg/m³ stone wool; offers 32 kg/m³ glass. Density does not transfer between
+materials — glass fibres are finer (~5 µm vs 8 µm), so equal density means ~3× the flow
+resistivity: σ(32 kg glass) ≈ 15–26 kPa·s/m² (fibre-diameter uncertainty) vs 9 for 30-stone.
+Engine check, 250 mm winner architecture (front×200 | cap 160×25 | g15 | ply9), refl 50–300 Hz:
+
+| front | refl 50–150 | 150–300 |
+|---|---|---|
+| stone 30 (baseline) | 0.31 | 0.09 |
+| glass 32, σ=15k (optimistic) | 0.34 | 0.16 |
+| stone 40 Safe'n'Sound (available) | 0.34 | 0.15 |
+| glass 32, σ=26k (Bies–Hansen @5 µm) | 0.42 | 0.26 |
+| glass 32 as thin screen + deep gap (best of 4 tried) | 0.44–0.47 mid | — |
+
+Verdicts: (1) 32 kg glass as the full front is between "ties stone-40" and "clearly worse",
+depending on its true σ — the deciding number is the datasheet airflow resistivity (EN 29053);
+accept if ≤ ~10 kPa·s/m², reject if ≥ ~15. (2) Screen architectures (thin glass + deep gap)
+all lose. (3) Light glass batts (12–16 kg/m³, common thermal insulation) ARE acoustically
+equivalent to 30-stone (σ ≈ 6–9 kPa·s/m²) — the better ask is lighter glass, not denser.
+(4) Fallback that needs no new sourcing: Safe'n'Sound 40 stone full front costs only +0.03
+refl vs baseline. Glass caveats vs stone: similar acoustics at equal σ; worse fire rating
+class and sag; fine inside a closed wall.
