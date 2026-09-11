@@ -1,0 +1,48 @@
+{
+ "name": "baseline 40+60",
+ "fabric": {
+  "thickness": 0.001,
+  "sigma": 300000.0,
+  "Rs": null,
+  "areal_mass": 0.3
+ },
+ "rockwool": [
+  {
+   "name": "Safe'n'Sound",
+   "density": 40.0,
+   "thickness": 0.05,
+   "model": "jca",
+   "sigma": null,
+   "phi": null,
+   "alpha_inf": null,
+   "Lambda": null,
+   "Lambda_p": null,
+   "k0p": null,
+   "d_fibre": 8e-6
+  },
+  {
+   "name": "RW3",
+   "density": 60.0,
+   "thickness": 0.05,
+   "model": "jca",
+   "sigma": null,
+   "phi": null,
+   "alpha_inf": null,
+   "Lambda": null,
+   "Lambda_p": null,
+   "k0p": null,
+   "d_fibre": 8e-6
+  }
+ ],
+ "airgap": {
+  "thickness": 0.0
+ },
+ "plywood": {
+  "thickness": 0.012,
+  "density": 600.0,
+  "E": 8000000000.0,
+  "nu": 0.3,
+  "loss": 0.03,
+  "model": "plate"
+ }
+}

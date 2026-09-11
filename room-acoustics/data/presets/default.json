@@ -128,5 +128,27 @@
   "basis_margin": 1.6,
   "n_modes": null,
   "wall_angle_deg": 0.0
+ },
+ "isolation_solver": {
+  "f_min": 20.0,
+  "f_max": 200.0,
+  "points_per_octave": 12,
+  "nodes_per_wavelength": 6.0,
+  "workers": 4,
+  "receivers": null
+ },
+ "cost": {
+  "currency": "USD",
+  "panel_w": 1.2,
+  "panel_h": 0.6,
+  "waste_fraction": 0.1,
+  "rockwool_price_per_panel": [],
+  "rockwool_price_per_panel_default": 12.0,
+  "fabric_price_per_m2": 15.0,
+  "ply_sheet_w": 1.2,
+  "ply_sheet_h": 2.4,
+  "ply_price_per_sheet": 45.0,
+  "labour_fraction": 0.5,
+  "fixed_costs": 0.0
  }
 }
