@@ -1,0 +1,15 @@
+# python
+sim/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+sim/dist/
+# node
+ui/node_modules/
+ui/dist/
+# run store and caches (append-only local data; index may be committed deliberately)
+data/runs/*
+!data/runs/.gitkeep
+data/cache/
+# os
+.DS_Store
