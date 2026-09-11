@@ -99,3 +99,48 @@ def test_compute_wall_is_json_serialisable_and_has_expected_keys():
     for k in ("f", "layers", "Z_rigid", "Z_air", "alpha_rigid", "alpha_air", "TL", "markers", "warnings"):
         assert k in res
     assert res["markers"]["f_mass_air_mass"] is None  # single impervious leaf
+
+
+def test_legacy_wall_json_migrates_to_layers():
+    """v1 schema (rockwool[] + trailing airgap) folds into ordered `layers` on load."""
+    legacy = {"name": "old", "fabric": {"thickness": 0.001},
+              "rockwool": [{"density": 40, "thickness": 0.05}, {"density": 60, "thickness": 0.05}],
+              "airgap": {"thickness": 0.05}, "plywood": {"thickness": 0.012}}
+    w = WallStack.model_validate(legacy)
+    assert [l.kind for l in w.layers] == ["rockwool", "rockwool", "airgap"]
+    assert abs(w.thickness - (0.001 + 0.05 * 3 + 0.012)) < 1e-12
+    compute_wall(w)  # must solve
+
+
+def test_layer_order_is_physical_gap_position_matters():
+    mid = WallStack(fabric=Fabric(thickness=0), layers=[RockwoolLayer(density=40, thickness=0.05),
+                                                        AirGap(thickness=0.05), RockwoolLayer(density=80, thickness=0.05)])
+    end = WallStack(fabric=Fabric(thickness=0), layers=[RockwoolLayer(density=40, thickness=0.05),
+                                                        RockwoolLayer(density=80, thickness=0.05), AirGap(thickness=0.05)])
+    rm, re_ = compute_wall(mid), compute_wall(end)
+    am, ae = np.array(rm["alpha_rigid"]["field"]), np.array(re_["alpha_rigid"]["field"])
+    assert rm["thickness"] == re_["thickness"]
+    assert not np.allclose(am, ae)
+    for a in (am, ae):
+        assert np.all(a >= 0) and np.all(a <= 1)
+
+
+def test_multiple_airgaps_supported():
+    w = WallStack(layers=[RockwoolLayer(density=40, thickness=0.05), AirGap(thickness=0.03),
+                          RockwoolLayer(density=60, thickness=0.05), AirGap(thickness=0.03)])
+    res = compute_wall(w)
+    assert sum(1 for r in res["layers"] if r["layer"] == "air gap") == 2
+    assert len(res["markers"]["gap_half_wave_dips"]) == 6
+
+
+def test_energy_budget_conserves_and_matches_alpha():
+    """reflected + dissipated + transmitted = 1; alpha_air.field = 1 - reflected exactly."""
+    res = compute_wall(WallStack())
+    r = np.array(res["energy"]["reflected"])
+    d = np.array(res["energy"]["dissipated"])
+    t = np.array(res["energy"]["transmitted"])
+    for x in (r, d, t):
+        assert np.all(x >= 0) and np.all(x <= 1)
+    assert np.all(1.0 - r - t >= -1e-9)  # dissipated never clipped, i.e. physical
+    np.testing.assert_allclose(r + d + t, 1.0, atol=1e-9)
+    np.testing.assert_allclose(1.0 - r, np.array(res["alpha_air"]["field"]), atol=1e-9)

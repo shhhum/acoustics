@@ -1,4 +1,4 @@
-import type { MaterialPresets, RunFull, RunMeta, SavedWall, Scene, WallResult, WallSolverSettings, WallStack } from "./types";
+import type { MaterialPresets, RunFull, RunMeta, SavedRoom, SavedWall, Scene, SoundRoom, WallResult, WallSolverSettings, WallStack } from "./types";
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(path, { headers: { "content-type": "application/json" }, ...init });
@@ -14,6 +14,9 @@ export const api = {
   presets: () => req<{ name: string; scene: Scene }[]>("/api/presets"),
   savePreset: (name: string, scene: Scene) => req(`/api/presets/${name}`, { method: "PUT", body: JSON.stringify(scene) }),
   walls: () => req<SavedWall[]>("/api/walls"),
+  rooms: () => req<SavedRoom[]>("/api/rooms"),
+  saveRoom: (name: string, room: SoundRoom) => req(`/api/rooms/${encodeURIComponent(name)}`, { method: "PUT", body: JSON.stringify(room) }),
+  deleteRoom: (name: string) => req(`/api/rooms/${encodeURIComponent(name)}`, { method: "DELETE" }),
   saveWall: (name: string, wall: WallStack) => req(`/api/walls/${encodeURIComponent(name)}`, { method: "PUT", body: JSON.stringify(wall) }),
   deleteWall: (name: string) => req(`/api/walls/${encodeURIComponent(name)}`, { method: "DELETE" }),
   runs: () => req<RunMeta[]>("/api/runs"),

@@ -144,7 +144,7 @@ function VenueHeatmap({ grid, scene, recs }: { grid: (number | null)[][]; scene:
   const W = 760, S = W / v.length, H = v.width * S;
   const cw = W / nx, ch = H / ny;
   const hi = 10, lo = -50;
-  const t = scene.wall.fabric.thickness + scene.wall.rockwool.reduce((a, b) => a + b.thickness, 0) + scene.wall.airgap.thickness + scene.wall.plywood.thickness;
+  const t = scene.wall.fabric.thickness + scene.wall.layers.reduce((a, b) => a + b.thickness, 0) + scene.wall.plywood.thickness;
   return (
     <div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ display: "block" }}>

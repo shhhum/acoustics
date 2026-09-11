@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import runs as rs
-from .config import Scene, WallSolverSettings, WallStack
+from .config import Scene, SoundRoom, WallSolverSettings, WallStack
 from .jobs import RUNNER
 from .materials import data_dir, load_presets
 from .wall import compute_wall
@@ -85,8 +85,9 @@ def _walls_dir() -> Path:
 
 
 def _safe_name(name: str) -> str:
-    if not name or not all(ch.isalnum() or ch in "-_ .+()," for ch in name) or name.startswith(".") or "/" in name:
-        raise HTTPException(400, "wall name: letters, digits, space, - _ . + ( ) , only")
+    bad = set("/\\\x00")
+    if not name or any(ch in bad for ch in name) or name.startswith("."):
+        raise HTTPException(400, "wall name: no / or \\, must not start with a dot")
     return name.strip()
 
 
@@ -99,7 +100,8 @@ def list_walls():
         except Exception:  # noqa: BLE001
             continue
         out.append({"name": p.stem, "wall": w.model_dump(mode="json"), "thickness_mm": w.thickness * 1e3,
-                    "layers": [f"{r.density:g}×{r.thickness*1e3:.0f}" for r in w.rockwool if r.thickness > 0],
+                    "layers": [(f"gap×{l.thickness*1e3:.0f}" if l.kind == "airgap" else f"{l.density:g}×{l.thickness*1e3:.0f}")
+                               for l in w.layers if l.thickness > 0],
                     "modified": p.stat().st_mtime})
     return out
 
@@ -115,6 +117,42 @@ def put_wall(name: str, wall: WallStack):
 @app.delete("/api/walls/{name}")
 def delete_wall(name: str):
     p = _walls_dir() / f"{_safe_name(name)}.json"
+    if not p.exists():
+        raise HTTPException(404, name)
+    p.unlink()
+    return {"ok": True}
+
+
+def _rooms_dir() -> Path:
+    d = data_dir() / "rooms"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+@app.get("/api/rooms")
+def list_rooms():
+    out = []
+    for p in sorted(_rooms_dir().glob("*.json")):
+        try:
+            r = SoundRoom.model_validate(json.loads(p.read_text()))
+        except Exception:  # noqa: BLE001
+            continue
+        out.append({"name": p.stem, "room": r.model_dump(mode="json"),
+                    "dims": f"{r.length:g}×{r.width:g} m at ({r.x:g}, {r.y:g})",
+                    "modified": p.stat().st_mtime})
+    return out
+
+
+@app.put("/api/rooms/{name}")
+def put_room(name: str, room: SoundRoom):
+    name = _safe_name(name)
+    (_rooms_dir() / f"{name}.json").write_text(room.model_dump_json(indent=1))
+    return {"ok": True, "name": name}
+
+
+@app.delete("/api/rooms/{name}")
+def delete_room(name: str):
+    p = _rooms_dir() / f"{_safe_name(name)}.json"
     if not p.exists():
         raise HTTPException(404, name)
     p.unlink()

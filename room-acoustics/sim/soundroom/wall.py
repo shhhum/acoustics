@@ -6,7 +6,7 @@ import numpy as np
 
 from . import materials as mat
 from . import porous, statistical as stat, tmm
-from .config import RockwoolLayer, WallSolverSettings, WallStack
+from .config import AirGap, RockwoolLayer, WallSolverSettings, WallStack
 from .constants import AIR, Air
 
 
@@ -34,20 +34,20 @@ def build_layers(stack: WallStack, air: Air = AIR, force_model: str | None = Non
         Rs = fab.flow_resistance
         layers.append(tmm.ScreenLayer(Rs=Rs, m_s=fab.areal_mass, name="fabric"))
         table.append({"layer": "fabric", "thickness": fab.thickness, "Rs": Rs, "Rs_over_rho_c": Rs / air.Z0})
-    for i, rw in enumerate(stack.rockwool):
-        if rw.thickness <= 0:
+    for i, L in enumerate(stack.layers):
+        if L.thickness <= 0:
             continue
-        if force_model is not None:
-            rw = rw.model_copy(update={"model": force_model})
+        if isinstance(L, AirGap):
+            layers.append(tmm.FluidLayer(d=L.thickness, model=tmm.air_model(air), name="air gap"))
+            table.append({"layer": "air gap", "thickness": L.thickness})
+            continue
+        rw = L if force_model is None else L.model_copy(update={"model": force_model})
         p, fn = rockwool_model(rw, air)
         layers.append(tmm.FluidLayer(d=rw.thickness, model=fn, name=rw.name or f"rockwool {rw.density:g} kg/m³"))
         table.append({"layer": rw.name or f"rockwool[{i}]", "density": rw.density, "thickness": rw.thickness,
                       "model": rw.model, "sigma": p.sigma, "phi": p.phi, "alpha_inf": p.alpha_inf,
                       "Lambda": p.Lambda, "Lambda_p": p.Lambda_p, "k0p": p.k0p_effective,
                       "sigma_d_over_rho_c": p.sigma * rw.thickness / air.Z0})
-    if stack.airgap.thickness > 0:
-        layers.append(tmm.FluidLayer(d=stack.airgap.thickness, model=tmm.air_model(air), name="air gap"))
-        table.append({"layer": "air gap", "thickness": stack.airgap.thickness})
     ply = stack.plywood
     if ply.thickness > 0:
         D = 0.0 if ply.model == "limp" else mat.plate_bending_stiffness(ply.E, ply.thickness, ply.nu, ply.loss)
@@ -97,6 +97,14 @@ def compute_wall(stack: WallStack, settings: WallSolverSettings | None = None, a
     out["TL"]["mass_law_normal"] = stat.mass_law_tl(f, m_ply, False, air).tolist() if m_ply > 0 else None
     out["TL"]["mass_law_field"] = stat.mass_law_tl(f, m_ply, True, air).tolist() if m_ply > 0 else None
 
+    # energy budget, field incidence, venue-backed: incident = reflected + dissipated (heat) + transmitted.
+    # alpha_air.field = 1 - reflected by construction; this splits the remainder.
+    Zf_air = tmm.surface_impedance(layers, f, th_f, "air", air)
+    R2 = tmm.paris_average(np.abs(tmm.reflection(Zf_air, th_f, air)) ** 2, w_f)
+    tau_f = tmm.paris_average(np.abs(tmm.transmission_coefficient(layers, f, th_f, air)) ** 2, w_f)
+    out["energy"] = {"reflected": R2.tolist(), "transmitted": tau_f.tolist(),
+                     "dissipated": np.clip(1.0 - R2 - tau_f, 0.0, 1.0).tolist()}
+
     # Miki cross-check (same stack, all rockwool layers forced to Miki)
     layers_miki, _ = build_layers(stack, air, force_model="miki")
     Zm = tmm.surface_impedance(layers_miki, f, th_f, "rigid", air)
@@ -109,12 +117,12 @@ def compute_wall(stack: WallStack, settings: WallSolverSettings | None = None, a
 
 def markers(stack: WallStack, table: list[dict], air: Air = AIR) -> dict:
     m: dict = {}
-    wool = sum(r.thickness for r in stack.rockwool)
-    depth = wool + stack.airgap.thickness
+    depth = sum(l.thickness for l in stack.layers)
     if depth > 0:
         m["quarter_wave_f_low"] = air.c0 / (4 * depth)
-    if stack.airgap.thickness > 0:
-        m["gap_half_wave_dips"] = [n * air.c0 / (2 * stack.airgap.thickness) for n in (1, 2, 3)]
+    gaps = [g.thickness for g in stack.airgaps if g.thickness > 0]
+    if gaps:
+        m["gap_half_wave_dips"] = sorted(n * air.c0 / (2 * g) for g in gaps for n in (1, 2, 3))
     for row in table:
         if "f_critical" in row:
             m["f_critical_plywood"] = row["f_critical"]
