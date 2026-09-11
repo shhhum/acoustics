@@ -14,4 +14,4 @@ ui:
 	cd ui && npm run dev
 
 dev:
-	@echo "run 'make api' and 'make ui' in two terminals"
+	./scripts/dev.sh

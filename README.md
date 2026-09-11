@@ -8,7 +8,7 @@ the coupled venue to predict modes, frequency response, T60 and the inside→
 outside level difference. A React UI drives the Python engine; every run is
 logged to disk with its inputs and provenance.
 
-Status: **M0 — research memorialized, skeleton only.** See `docs/decisions.md`
+Status: **M2 — wall engine + local API + React UI (Wall, Runs pages); room FEM (M3) and coupled isolation (M4) next.** See `docs/decisions.md`
 for the dated decision log and `docs/research/` for the literature/patent
 reports the design rests on.
 

@@ -89,7 +89,8 @@ def compute_wall(stack: WallStack, settings: WallSolverSettings | None = None, a
         }
 
     tl_n = tmm.transmission_loss(layers, f, zero, air)[:, 0]
-    tl_f = tmm.field_transmission_loss(layers, f, s.n_theta, s.theta_field_max, air)
+    # more angles for TL: the plate coincidence angle sweeps through the grid and is otherwise undersampled
+    tl_f = tmm.field_transmission_loss(layers, f, max(s.n_theta, 256), s.theta_field_max, air)
     out["TL"] = {"normal": tl_n.tolist(), "field": tl_f.tolist(),
                  "octave": {"f": stat.OCTAVE_CENTRES.tolist(), "field": _nan_to_none(stat.band_average(f, tl_f, stat.OCTAVE_CENTRES, 1))}}
     m_ply = stack.plywood.surface_mass if stack.plywood.thickness > 0 else 0.0
