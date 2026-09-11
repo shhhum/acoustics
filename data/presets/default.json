@@ -119,5 +119,14 @@
   "n_theta": 64,
   "theta_field_max": 78.0,
   "theta_random_max": 90.0
+ },
+ "room_solver": {
+  "f_max": 300.0,
+  "df": 0.5,
+  "nodes_per_wavelength": 8.0,
+  "basis": "analytic",
+  "basis_margin": 1.6,
+  "n_modes": null,
+  "wall_angle_deg": 0.0
  }
 }

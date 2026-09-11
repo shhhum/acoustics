@@ -68,6 +68,32 @@ def _plot_wall(res: dict, path: Path) -> None:
     fig.savefig(path, dpi=120)
 
 
+def cmd_room(args) -> int:
+    import numpy as np
+
+    from .room import compute_room
+
+    scene = _load_scene(args.config)
+    if args.fmax:
+        scene.room_solver.f_max = args.fmax
+
+    class P:
+        def update(self, frac, msg=""):
+            print(f"  {frac*100:5.1f}%  {msg}", file=sys.stderr)
+
+    res, arrays = compute_room(scene, scene.room_solver, P())
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "room.json").write_text(json.dumps(res, indent=1))
+    np.savez_compressed(out / "room.npz", **arrays)
+    (out / "inputs.json").write_text(scene.model_dump_json(indent=1))
+    st = res["stats"]
+    print(f"wrote {out/'room.json'}: {st['mesh']['nodes']} dofs, {st['N_basis']} modes, "
+          f"{st['n_modes_below_cap']} below {scene.room_solver.f_max:.0f} Hz, f_schroeder {st['f_schroeder']:.0f} Hz, "
+          f"timings {{{', '.join(f'{k} {v:.1f}s' for k, v in res['timings'].items())}}}")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="soundroom")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -76,6 +102,11 @@ def main(argv=None) -> int:
     w.add_argument("--out", default="out/wall", help="output directory")
     w.add_argument("--png", action="store_true", help="also write wall.png (matplotlib)")
     w.set_defaults(fn=cmd_wall)
+    r = sub.add_parser("room", help="room FEM/modal solve: FRF, T60, modes, pressure slices")
+    r.add_argument("--config")
+    r.add_argument("--out", default="out/room")
+    r.add_argument("--fmax", type=float, help="override the FEM cap (Hz)")
+    r.set_defaults(fn=cmd_room)
     args = p.parse_args(argv)
     return args.fn(args)
 

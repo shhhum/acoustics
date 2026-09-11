@@ -7,7 +7,7 @@ import type { RunFull, RunMeta, Scene } from "../types";
 
 const COLOURS = [T.olive, T.slate, T.violet, T.red];
 
-export function RunsPage({ onLoad, refreshKey }: { onLoad: (s: Scene) => void; refreshKey: number }) {
+export function RunsPage({ onLoad, refreshKey }: { onLoad: (id: string, s: Scene) => void; refreshKey: number }) {
   const [runs, setRuns] = useState<RunMeta[]>([]);
   const [open, setOpen] = useState<RunFull | null>(null);
   const [compare, setCompare] = useState<RunFull[]>([]);
@@ -33,7 +33,7 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (s: Scene) => void; r
       {err && <Note tone={T.red}>{err}</Note>}
       <Card title="Runs" note={`${runs.length} on disk · data/runs/`}>
         <table style={{ width: "100%", borderCollapse: "collapse", font: `500 11px ${mono}` }}>
-          <thead><tr>{["", "id", "note", "kinds", "status", "mm", "α125", "TL125", "σd/ρc", ""].map((h, i) => (
+          <thead><tr>{["", "id", "note", "kinds", "status", "mm", "α125", "TL125", "σd/ρc", "T60@125", ""].map((h, i) => (
             <th key={i} style={{ textAlign: "left", padding: "4px 6px", borderBottom: `1px solid ${T.ink}`, font: `600 9px ${mono}`, letterSpacing: ".1em", color: T.ink2 }}>{h}</th>))}</tr></thead>
           <tbody>
             {runs.map((r) => {
@@ -49,7 +49,8 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (s: Scene) => void; r
                   <td style={td}>{r.summary?.alpha_field_125?.toFixed(2)}</td>
                   <td style={td}>{r.summary?.TL_field_125?.toFixed(1)}</td>
                   <td style={td}>{r.summary?.sigma_d_over_rho_c?.toFixed(1)}</td>
-                  <td style={td}><Button small onClick={async () => onLoad((await api.run(r.id)).inputs)}>load inputs</Button></td>
+                  <td style={td}>{r.summary?.t60_schroeder_125 != null ? `${r.summary.t60_schroeder_125.toFixed(2)} s` : ""}</td>
+                  <td style={td}><Button small onClick={async () => onLoad(r.id, (await api.run(r.id)).inputs)}>load inputs</Button></td>
                 </tr>
               );
             })}
@@ -73,7 +74,7 @@ export function RunsPage({ onLoad, refreshKey }: { onLoad: (s: Scene) => void; r
                 {open.inputs.wall.airgap.thickness > 0 ? ` → gap ${(open.inputs.wall.airgap.thickness * 1000).toFixed(0)}mm` : ""} → ply {(open.inputs.wall.plywood.thickness * 1000).toFixed(0)}mm</div>
               <div><b>room</b> {open.inputs.room.length}×{open.inputs.room.width} m at ({open.inputs.room.x}, {open.inputs.room.y}) · sources on {open.inputs.room.source_face}</div>
               <div><b>summary</b><pre style={{ font: `500 10px ${mono}`, margin: 0 }}>{JSON.stringify(open.meta.summary, null, 1)}</pre></div>
-              <div style={{ marginTop: 8 }}><Button primary onClick={() => onLoad(open.inputs)}>load these inputs into the editor</Button></div>
+              <div style={{ marginTop: 8 }}><Button primary onClick={() => onLoad(open.meta.id, open.inputs)}>load these inputs into the editor</Button></div>
             </div>
           </div>
         </Card>

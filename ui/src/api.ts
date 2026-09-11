@@ -20,5 +20,6 @@ export const api = {
   patchRun: (id: string, patch: { note?: string; tags?: string[] }) =>
     req<RunMeta>(`/api/runs/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
   progress: (id: string) => req<{ id: string; status: string; progress: number; message: string; error?: string }>(`/api/runs/${id}/progress`),
+  slices: (id: string) => req<{ freqs: number[]; slices_db: number[][][] }>(`/api/runs/${id}/slices`),
   cancel: (id: string) => req(`/api/runs/${id}/cancel`, { method: "POST" }),
 };
