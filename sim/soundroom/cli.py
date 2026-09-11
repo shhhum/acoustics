@@ -94,6 +94,33 @@ def cmd_room(args) -> int:
     return 0
 
 
+def cmd_isolation(args) -> int:
+    import numpy as np
+
+    from .isolation import compute_isolation
+
+    scene = _load_scene(args.config)
+    if args.fmax:
+        scene.isolation_solver.f_max = args.fmax
+    if args.workers:
+        scene.isolation_solver.workers = args.workers
+
+    class P:
+        def update(self, frac, msg=""):
+            print(f"  {frac*100:5.1f}%  {msg}", file=sys.stderr)
+
+    res, arrays = compute_isolation(scene, P())
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "isolation.json").write_text(json.dumps(res, indent=1))
+    np.savez_compressed(out / "isolation.npz", **arrays)
+    (out / "inputs.json").write_text(scene.model_dump_json(indent=1))
+    sm = res["summary"]
+    print(f"wrote {out/'isolation.json'}: {res['fem']['dofs']} dofs, D_venue_avg(FEM) @125 = {sm['D_venue_avg_fem_125']:.1f} dB, "
+          f"TL_max(openings) = {sm['TL_max_openings']}, timings {{{', '.join(f'{k} {v:.1f}s' for k, v in res['timings'].items())}}}")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="soundroom")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -107,6 +134,12 @@ def main(argv=None) -> int:
     r.add_argument("--out", default="out/room")
     r.add_argument("--fmax", type=float, help="override the FEM cap (Hz)")
     r.set_defaults(fn=cmd_room)
+    i = sub.add_parser("isolation", help="coupled venue+room FEM: inside->outside level difference")
+    i.add_argument("--config")
+    i.add_argument("--out", default="out/isolation")
+    i.add_argument("--fmax", type=float)
+    i.add_argument("--workers", type=int)
+    i.set_defaults(fn=cmd_isolation)
     args = p.parse_args(argv)
     return args.fn(args)
 

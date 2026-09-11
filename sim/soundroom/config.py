@@ -132,6 +132,15 @@ class RoomSolverSettings(BaseModel):
     wall_angle_deg: float = Field(0.0, ge=0, le=80, description="incidence angle at which the wall's Z_s is taken for the Robin BC")
 
 
+class IsolationSolverSettings(BaseModel):
+    f_min: float = Field(20.0, gt=0)
+    f_max: float = Field(200.0, gt=20, le=500, description="coupled FEM cap, Hz (direct solves: cost ∝ f³)")
+    points_per_octave: int = Field(12, ge=3, le=48)
+    nodes_per_wavelength: float = Field(6.0, ge=4)
+    workers: int = Field(4, ge=1, le=16, description="parallel frequency solves (each holds an LU: ~0.5–1.5 GB)")
+    receivers: list[list[float]] | None = Field(None, description="venue-coordinate receiver points; None = defaults")
+
+
 class Scene(BaseModel):
     schema_version: int = SCHEMA_VERSION
     name: str = "default"
@@ -141,3 +150,4 @@ class Scene(BaseModel):
     listener: Listener = Listener()
     wall_solver: WallSolverSettings = WallSolverSettings()
     room_solver: RoomSolverSettings = RoomSolverSettings()
+    isolation_solver: IsolationSolverSettings = IsolationSolverSettings()

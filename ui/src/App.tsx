@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "./api";
 import { Card, Note } from "./primitives";
 import { RunsPage } from "./pages/RunsPage";
+import { IsolationPage, IsolationRail } from "./pages/IsolationPage";
 import { RoomPage, RoomRail } from "./pages/RoomPage";
 import { WallPage, WallRail } from "./pages/WallPage";
 import { T, disp, mono } from "./theme";
-import type { MaterialPresets, RoomResult, Scene, WallResult } from "./types";
+import type { IsolationResult, MaterialPresets, RoomResult, Scene, WallResult } from "./types";
 
 type Tab = "wall" | "room" | "isolation" | "runs";
 
@@ -22,6 +23,44 @@ export default function App() {
   const [roomSlices, setRoomSlices] = useState<number[][][] | null>(null);
   const [roomProgress, setRoomProgress] = useState<{ status: string; progress: number; message: string; error?: string } | null>(null);
   const [roomRunId, setRoomRunId] = useState<string | null>(null);
+  const [iso, setIso] = useState<IsolationResult | null>(null);
+  const [isoSlices, setIsoSlices] = useState<(number | null)[][][] | null>(null);
+  const [isoProgress, setIsoProgress] = useState<{ status: string; progress: number; message: string; error?: string } | null>(null);
+  const [isoRunId, setIsoRunId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isoRunId) return;
+    let alive = true;
+    const tick = async () => {
+      try {
+        const p = await api.progress(isoRunId);
+        if (!alive) return;
+        setIsoProgress(p);
+        if (p.status === "done") {
+          const full = await api.run(isoRunId);
+          setIso(full.isolation ?? null);
+          setIsoSlices((await api.isoSlices(isoRunId)).slices_db);
+          setRunsKey((k) => k + 1);
+          setIsoRunId(null);
+        } else if (p.status === "failed" || p.status === "cancelled") {
+          setIsoRunId(null);
+          setRunsKey((k) => k + 1);
+        } else {
+          window.setTimeout(tick, 1000);
+        }
+      } catch (e) { setErr(String(e)); setIsoRunId(null); }
+    };
+    tick();
+    return () => { alive = false; };
+  }, [isoRunId]);
+
+  const runIso = async (note: string) => {
+    if (!scene) return;
+    setIso(null); setIsoSlices(null);
+    setIsoProgress({ status: "queued", progress: 0, message: "" });
+    const meta = await api.createRun(scene, ["wall", "isolation"], note);
+    setIsoRunId(meta.id);
+  };
 
   // poll a running room job
   useEffect(() => {
@@ -62,7 +101,9 @@ export default function App() {
     setScene(s);
     try {
       const full = await api.run(id);
+      if (full.isolation) { setIso(full.isolation); setIsoSlices((await api.isoSlices(id)).slices_db); setIsoProgress(null); }
       if (full.room) { setRoom(full.room); setRoomSlices((await api.slices(id)).slices_db); setRoomProgress(null); setTab("room"); return; }
+      if (full.isolation) { setTab("isolation"); return; }
     } catch { /* wall-only run */ }
     setTab("wall");
   };
@@ -119,13 +160,13 @@ export default function App() {
             <aside style={{ background: T.paper, border: `1px solid ${T.rule}`, borderRadius: 3, padding: 16, alignSelf: "start", position: "sticky", top: 16, maxHeight: "calc(100vh - 32px)", overflowY: "auto" }}>
               {tab === "wall" && <WallRail scene={scene} setScene={setScene} materials={materials} />}
               {tab === "room" && <RoomRail scene={scene} setScene={setScene} onRun={runRoom} running={!!roomRunId} />}
-              {tab === "isolation" && <Note>Isolation controls arrive with M4 (coupled venue FEM).</Note>}
+              {tab === "isolation" && <IsolationRail scene={scene} setScene={setScene} onRun={runIso} running={!!isoRunId} />}
             </aside>
           )}
           <section style={{ minWidth: 0 }}>
             {tab === "wall" && <WallPage scene={scene} result={wall} materials={materials} onSave={save} />}
             {tab === "room" && <RoomPage scene={scene} result={room} progress={roomProgress} slices={roomSlices} />}
-            {tab === "isolation" && <Card title="Isolation"><Note>Inside→outside level difference — M4.</Note></Card>}
+            {tab === "isolation" && <IsolationPage scene={scene} result={iso} progress={isoProgress} slices={isoSlices} />}
             {tab === "runs" && <RunsPage onLoad={loadRun} refreshKey={runsKey} />}
           </section>
         </main>

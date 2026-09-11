@@ -34,8 +34,19 @@ export interface Listener { x: number; y: number; z: number }
 
 export interface RoomSolverSettings { f_max: number; df: number; nodes_per_wavelength: number; basis: "analytic" | "fem"; basis_margin: number; n_modes?: number | null; wall_angle_deg: number }
 
+export interface IsolationSolverSettings { f_min: number; f_max: number; points_per_octave: number; nodes_per_wavelength: number; workers: number; receivers?: number[][] | null }
+
 export interface Scene {
-  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings; room_solver: RoomSolverSettings;
+  schema_version: number; name: string; wall: WallStack; venue: Venue; room: SoundRoom; listener: Listener; wall_solver: WallSolverSettings; room_solver: RoomSolverSettings; isolation_solver: IsolationSolverSettings;
+}
+
+export interface IsolationResult {
+  fem: { f: number[]; D_receivers: number[][]; D_venue_avg: number[]; dofs: number; h: number; areas: Record<string, number>; workers: number };
+  statistical: { f: number[]; D_receivers: number[][]; D_venue_avg: number[]; TL_wall_field: number[]; TL_composite: number[]; TL_max_openings: number | null; open_fraction: number; R_venue: number[] };
+  receivers: number[][];
+  slices: { x: number[]; y: number[]; z: number; freqs: number[]; reference: string };
+  summary: { D_venue_avg_fem_125: number; D_venue_avg_fem_max_f: number; TL_max_openings: number | null; open_fraction: number; coupled_dofs: number };
+  timings: Record<string, number>;
 }
 
 export interface RoomMode { f_rigid: number; f_damped: number; T60: number | null; n: number[] | null; type: string }
@@ -75,7 +86,7 @@ export interface RunMeta {
   inputs_hash: string; summary: Record<string, number>; provenance?: Record<string, any>; timings?: Record<string, number>; artifacts?: string[];
 }
 
-export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: RoomResult; isolation?: any }
+export interface RunFull { meta: RunMeta; inputs: Scene; wall?: WallResult; room?: RoomResult; isolation?: IsolationResult }
 
 export interface MaterialPresets {
   rockwool: { name: string; density: number; sigma_estimate: number; sigma_strutt: number; source: string }[];
