@@ -8,7 +8,7 @@ the coupled venue to predict modes, frequency response, T60 and the inside→
 outside level difference. A React UI drives the Python engine; every run is
 logged to disk with its inputs and provenance.
 
-Status: **M4 — wall engine, room FEM/modal solver, coupled venue isolation solver, API + UI (Wall, Room, Isolation, Runs). M5 (run comparison, presets, export) next.** See `docs/decisions.md`
+Status: **M5 — complete first version: wall engine, room FEM/modal solver, coupled venue isolation, run store with comparison, presets, CSV export. Next candidates: volumetric-wool FEM arm (locally-reacting error), door panels, second impervious leaf option.** See `docs/decisions.md`
 for the dated decision log and `docs/research/` for the literature/patent
 reports the design rests on.
 
